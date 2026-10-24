@@ -1,0 +1,44 @@
+{
+  "name": "@costfluent/sdk",
+  "version": "0.0.0",
+  "description": "TypeScript client for the Costfluent Public API",
+  "license": "Apache-2.0",
+  "author": "Costfluent",
+  "homepage": "https://docs.costfluent.com/developers/sdks",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/costfluent/costfluent-typescript.git"
+  },
+  "keywords": [
+    "costfluent",
+    "finops",
+    "cloud-costs",
+    "api-client"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test 'test/*.test.ts'"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3"
+  }
+}
