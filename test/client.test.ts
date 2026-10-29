@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { describe, it } from "node:test";
 
-import { CONTRACT_SHA256, CostfluentError, VERSION } from "../src/index.ts";
+import { CONTRACT_SHA256, CostfluentError, VERSION, type components } from "../src/index.ts";
 import { FakeApi, TOKEN, json, problem } from "./fake-api.ts";
 
 const folder = () => json(201, { id: "fld_1", title: "Finance" });
@@ -167,11 +167,36 @@ describe("errors", () => {
     assert.equal(error.code, "");
     assert.equal(error.problem, undefined);
   });
+
+  // A proxy's page or a truncated answer under the problem media type.
+  for (const [name, body] of [
+    ["empty", ""],
+    ["html", "<html>"],
+    ["null", "null"],
+    ["no code", JSON.stringify({ type: "about:blank", title: "x", status: 403, retryable: false })],
+  ] as const) {
+    it(`report an unreadable problem body as none: ${name}`, async () => {
+      const api = new FakeApi(
+        new Response(body, {
+          status: 403,
+          headers: { "Content-Type": "application/problem+json", "X-Request-Id": "req_1" },
+        }),
+      );
+
+      const error = await api.client().GET("/v1/workspaces").catch((caught: unknown) => caught);
+
+      assert.ok(error instanceof CostfluentError);
+      assert.equal(error.status, 403);
+      assert.equal(error.code, "");
+      assert.equal(error.problem, undefined);
+      assert.equal(error.requestId, "req_1");
+    });
+  }
 });
 
 describe("money", () => {
   it("stays the exact decimal string the API sent", async () => {
-    const point = {
+    const point: components["schemas"]["CostDataPoint"] = {
       date: "2026-10-01",
       cost: "123456789012.12345678",
       listCost: "0.10000001",
@@ -179,14 +204,16 @@ describe("money", () => {
       currency: "EUR",
       dimensions: { service: "Compute" },
     };
-    const meta = {
+    const meta: components["schemas"]["CostDataMeta"] = {
       startDate: "2026-10-01",
       endDate: "2026-10-01",
       granularity: "day",
       measure: "cost",
       totalRecords: 1,
       presentation: { conversions: [], unconverted: [], totalsByCurrency: [] },
+      commitmentDiscounts: "asApplied",
       totalCost: "123456789012.12345678",
+      dataVersion: "3f2a9c0d1e4b5a68",
     };
     const api = new FakeApi(json(200, { links: { self: "/v1/costs" }, data: [point], meta }));
 

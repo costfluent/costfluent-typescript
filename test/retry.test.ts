@@ -11,6 +11,10 @@ const getFolder = (api: FakeApi) =>
 const acknowledge = (api: FakeApi) =>
   api.client().POST("/v1/anomalies/{anomalyId}/acknowledge", { params: { path: { anomalyId: "anm_1" } } });
 const caught = (call: Promise<unknown>) => call.then(() => undefined, (error: unknown) => error);
+const hang = (_request: Request, init?: RequestInit) =>
+  new Promise<Response>((_resolve, reject) => {
+    init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+  });
 
 describe("retries", () => {
   it("resend a rate-limited trigger after the wait the API names", async () => {
@@ -116,10 +120,6 @@ describe("retries", () => {
   });
 
   it("do not resend an attempt that timed out", async () => {
-    const hang = (_request: Request, init?: RequestInit) =>
-      new Promise<Response>((_resolve, reject) => {
-        init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
-      });
     const api = new FakeApi(hang);
 
     const error = await caught(
@@ -147,6 +147,102 @@ describe("retries", () => {
 
     await caught(getFolder(api));
 
+    assert.equal(api.requests.length, 1);
+  });
+
+  it("resend an unconditional PUT and a DELETE after a server error or a lost connection", async () => {
+    const member = { params: { path: { teamId: "team_1", userId: "usr_1" } } };
+    const calls = {
+      PUT: (api: FakeApi) => api.client().PUT("/v1/teams/{teamId}/members/{userId}", { ...member, body: { role: "editor" } }),
+      DELETE: (api: FakeApi) => api.client().DELETE("/v1/teams/{teamId}/members/{userId}", member),
+    };
+    for (const [method, call] of Object.entries(calls)) {
+      for (const failure of [unavailable, () => new TypeError("fetch failed")]) {
+        const api = new FakeApi(failure(), new Response(null, { status: 204 }));
+
+        const { response } = await call(api);
+
+        assert.equal(response.status, 204, method);
+        assert.equal(api.requests.length, 2, method);
+      }
+    }
+  });
+
+  it("do not resend a PATCH", async () => {
+    const api = new FakeApi(unavailable(), json(200, {}));
+
+    const error = await caught(
+      api.client().PATCH("/v1/virtual-tags/{virtualTagId}", {
+        params: { path: { virtualTagId: "vt_1" } },
+        body: { workspaceId: "ws_1" },
+      }),
+    );
+
+    assert.ok(error instanceof CostfluentError && error.status === 503, String(error));
+    assert.equal(api.requests.length, 1);
+  });
+
+  it("wait nothing on a negative or past Retry-After and back off on one it cannot read", async () => {
+    const cases: [string, number, number][] = [
+      ["-5", 0, 0],
+      ["Mon, 19 Oct 2026 11:59:00 GMT", 0, 0],
+      ["soon", 1_000, 1_250],
+    ];
+    for (const [value, low, high] of cases) {
+      const api = new FakeApi(problem(429, "rate_limited", {}, { "Retry-After": value }), folderRead());
+
+      await getFolder(api);
+
+      assert.equal(api.sleeps.length, 1, value);
+      const [delay = Number.NaN] = api.sleeps;
+      assert.ok(delay >= low && delay <= high, `${value} waited ${delay}`);
+    }
+  });
+
+  it("send once with maxRetries 0", async () => {
+    const api = new FakeApi(unavailable(), unavailable(), unavailable(), unavailable());
+
+    const error = await caught(
+      api
+        .client({ maxRetries: 0 })
+        .GET("/v1/folders/{folderId}", { params: { path: { folderId: "fld_1" }, query: { workspaceId: "ws_1" } } }),
+    );
+
+    assert.ok(error instanceof CostfluentError);
+    assert.equal(api.requests.length, 1);
+    assert.deepEqual(api.sleeps, []);
+  });
+
+  it("cap the backoff at thirty seconds", async () => {
+    const api = new FakeApi(...Array.from({ length: 7 }, unavailable), folderRead());
+
+    await api
+      .client({ maxRetries: 7 })
+      .GET("/v1/folders/{folderId}", { params: { path: { folderId: "fld_1" }, query: { workspaceId: "ws_1" } } });
+
+    assert.equal(api.sleeps.length, 7);
+    api.sleeps.forEach((delay, attempt) => {
+      const base = Math.min(1_000 * 2 ** attempt, 30_000);
+      assert.ok(delay >= base && delay <= base * 1.25, `attempt ${attempt} waited ${delay}`);
+    });
+  });
+
+  it("do not resend a call the caller aborted", async () => {
+    const controller = new AbortController();
+    const api = new FakeApi((request, init) => {
+      const reply = hang(request, init);
+      controller.abort();
+      return reply;
+    }, folderRead());
+
+    const error = await caught(
+      api.client({ timeoutMs: 1_000 }).GET("/v1/folders/{folderId}", {
+        params: { path: { folderId: "fld_1" }, query: { workspaceId: "ws_1" } },
+        signal: controller.signal,
+      }),
+    );
+
+    assert.ok(error instanceof DOMException && error.name === "AbortError", String(error));
     assert.equal(api.requests.length, 1);
   });
 });

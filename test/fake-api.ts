@@ -59,9 +59,15 @@ export class FakeApi {
     return new Response(body.byteLength > 0 ? body : null, { status: reply.status, headers: reply.headers });
   };
 
-  client(options: { baseUrl?: string; timeoutMs?: number } = {}): CostfluentClient {
+  client(options: { baseUrl?: string; timeoutMs?: number; maxRetries?: number } = {}): CostfluentClient {
     return buildClient(
-      { token: TOKEN, baseUrl: options.baseUrl ?? BASE_URL, timeoutMs: options.timeoutMs, fetch: this.fetch },
+      {
+        token: TOKEN,
+        baseUrl: options.baseUrl ?? BASE_URL,
+        timeoutMs: options.timeoutMs,
+        maxRetries: options.maxRetries,
+        fetch: this.fetch,
+      },
       {
         sleep: async (ms) => {
           this.sleeps.push(ms);
