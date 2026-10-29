@@ -183,7 +183,7 @@ export interface paths {
         head?: never;
         /**
          * Update virtual tag
-         * @description Updates a virtual tag and returns it as stored.
+         * @description Updates a virtual tag and returns it as stored. Refused with 409 conflict when the new key is another enabled virtual tag's in the workspace.
          *
          *     Needs a token with `manageTags` on the workspace.
          */
@@ -446,6 +446,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/teams/{teamId}/workspaces/{workspaceId}/default-dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set team default dashboard
+         * @description Sets the dashboard of the workspace that the team's members open after signing in, unless they chose their own, or clears it with a null dashboardId. The team needs access to the workspace, and the Everyone team has none. Removing the team's access to the workspace ends its default there; changing the level keeps it.
+         *
+         *     Needs an organization token with `manageWorkspaceAccess` and `viewDashboards`.
+         */
+        put: operations["SetTeamDefaultDashboard"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/tag-keys/{tagKeyId}": {
         parameters: {
             query?: never;
@@ -516,6 +538,112 @@ export interface paths {
          *     Needs an organization token with `viewOrganization`.
          */
         get: operations["ListTagKeys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/savings-views": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List savings views
+         * @description Returns the workspace's saved views of the savings queue, by title.
+         *
+         *     Needs a token with `viewSavingsItems` on the workspace.
+         */
+        get: operations["ListSavingsViews"];
+        put?: never;
+        /**
+         * Create savings view
+         * @description Saves a set of savings queue filters as a named view of the workspace.
+         *
+         *     Needs a token with `manageSavingsItems` on the workspace.
+         */
+        post: operations["CreateSavingsView"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/savings-views/{savingsViewId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get savings view
+         * @description Returns a saved view of the workspace's savings queue.
+         *
+         *     Needs a token with `viewSavingsItems` on the workspace.
+         */
+        get: operations["GetSavingsView"];
+        /**
+         * Update savings view
+         * @description Replaces a saved view whole: its title and every filter, a filter left out being cleared.
+         *
+         *     Needs a token with `manageSavingsItems` on the workspace.
+         */
+        put: operations["UpdateSavingsView"];
+        post?: never;
+        /**
+         * Delete savings view
+         * @description Deletes a saved view of the savings queue; the findings it listed stay.
+         *
+         *     Needs a token with `manageSavingsItems` on the workspace.
+         */
+        delete: operations["DeleteSavingsView"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/savings-items/{savingsItemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get savings finding
+         * @description Returns one finding of the workspace's savings queue with its evidence and its latest measurement. A curated finding is found only on a plan that includes curated savings.
+         *
+         *     Needs a token with `viewSavingsItems` on the workspace.
+         */
+        get: operations["GetSavingsItem"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/savings-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List savings findings
+         * @description Returns the workspace's savings queue: one tab's findings, or every status without one, narrowed by source, kind, the connection that generated them and a minimum monthly saving, newest first or largest saving first. Costfluent's curated findings are listed only on a plan that includes them. An unknown cloudAccountId matches no finding.
+         *
+         *     Needs a token with `viewSavingsItems` on the workspace.
+         */
+        get: operations["ListSavingsItems"];
         put?: never;
         post?: never;
         delete?: never;
@@ -630,7 +758,7 @@ export interface paths {
         get: operations["GetProvider"];
         /**
          * Update provider
-         * @description Updates a provider in place: its name, description, settings, credentials or sync frequency. A field left out keeps its value; clearDescription and clearSettings remove theirs. An update that another write to the provider overtook, or whose credentials or settings changed while the new credentials or export location were verified, answers 409 concurrency_conflict and changes nothing.
+         * @description Updates a provider in place: its display name, description, settings, credentials or sync frequency. A field left out keeps its value; clearDescription and clearSettings remove theirs. An update that another write to the provider overtook, or whose credentials or settings changed while the new credentials or export location were verified, answers 409 concurrency_conflict and changes nothing.
          *
          *     Needs an organization token with `manageProviders`.
          */
@@ -774,6 +902,28 @@ export interface paths {
          *     Needs an organization token with `syncProviders`.
          */
         post: operations["TriggerProviderSync"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/kubernetes/efficiency": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Kubernetes efficiency
+         * @description Returns the cost, idle cost and CPU and memory used and peak over requested of the workspace's Kubernetes clusters over a window, per cluster, namespace or workload, largest cost first. It reads the clusters' own rows, never the cloud connection's, and returns at most 500 rows.
+         *
+         *     Needs a token with `viewCosts` on the workspace.
+         */
+        get: operations["GetKubernetesEfficiency"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1426,6 +1576,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cost-estimates/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply cost estimate
+         * @description Records that the change an estimate was posted for was applied, today in the workspace's time zone, naming the estimate by the reference it was posted under, so CI needs no read access. Each created or replaced resource names the one to three ids it got; an address the estimate does not name as created or replaced is ignored. The same apply again answers the estimate unchanged. The 30 days before the apply date and the 30 from it are measured once cost data covers them. The answer names the estimate, its state and the apply date only, never its figures. The body is at most 5 MiB.
+         *
+         *     Needs a token with `submitCostEstimates` on the workspace.
+         */
+        post: operations["ApplyCostEstimate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cost-estimates/{estimateId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get cost estimate
+         * @description Returns one estimate with each resource's planned and, once reconciled, measured monthly cost and whether the reconciliation found it.
+         *
+         *     Needs a token with `viewCosts` on the workspace.
+         */
+        get: operations["GetCostEstimate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cost-estimates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List cost estimates
+         * @description Returns the workspace's estimates newest first, each with its planned and measured totals and without its resources.
+         *
+         *     Needs a token with `viewCosts` on the workspace.
+         */
+        get: operations["ListCostEstimates"];
+        put?: never;
+        /**
+         * Post cost estimate
+         * @description Posts a planned change's monthly cost estimate for a pull request of a repository, or a named plan, as CI does on every push. The first post for a reference creates the estimate (201); a later one replaces it whole (200) until the change is applied, after which a post answers 409. Costfluent stores the figures as posted and prices nothing itself; a null monthly cost is one the estimator could not price, never zero. The answer names the estimate and its state only: the token CI posts with may hold submitCostEstimates alone and read no cost, and a token that may view costs reads the estimate by its id. A workspace holds at most 1,000 proposed or applied estimates. The body is at most 5 MiB.
+         *
+         *     Needs a token with `submitCostEstimates` on the workspace.
+         */
+        post: operations["SubmitCostEstimate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/costs": {
         parameters: {
             query?: never;
@@ -1642,6 +1864,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/commitments/coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get commitment coverage
+         * @description Returns how much of the workspace's eligible usage commitments covered, the effective savings rate and the commitment left unused over a window, per bin and provider and in total, at amortized cost in the workspace's presentation currency.
+         *
+         *     Needs a token with `viewCosts` on the workspace.
+         */
+        get: operations["GetCommitmentCoverage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/commitments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List commitments
+         * @description Returns the reservations, savings plans and committed use discounts held through the workspace's connections, narrowed to the accounts the workspace reads of each, by end date, earliest first and those without an end last. It holds at most 5,000: those still running, soonest end first, before those that have ended.
+         *
+         *     Needs a token with `viewCosts` on the workspace.
+         */
+        get: operations["ListCommitments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/business-metrics": {
         parameters: {
             query?: never;
@@ -1749,7 +2015,7 @@ export interface paths {
         put?: never;
         /**
          * Create budget
-         * @description Creates a budget over a workspace, a segment or a saved cost report: a start date, a cadence of N days, weeks, months or years, and one amount for every period or an amount per period, with optional alert thresholds and notification channels. A usage budget (measure usage) counts one usage unit on a saved cost report's rows instead of money; a report holds at most one cost and one usage budget.
+         * @description Creates a budget over a workspace, a segment or a saved cost report: a start date, a cadence of N days, weeks, months or years, and one amount for every period or an amount per period, with optional alert thresholds on the spend so far or on the forecast for the period's end, and notification channels. A usage budget (measure usage) counts one usage unit on a saved cost report's rows instead of money, and takes no forecast threshold; a report holds at most one cost and one usage budget.
          *
          *     Needs a token with `createBudget` on the workspace.
          */
@@ -1776,7 +2042,7 @@ export interface paths {
         get: operations["GetBudget"];
         /**
          * Update budget
-         * @description Updates the name, the amounts, the scope (a segment, a cost report or the whole workspace), a usage budget's unit or the notification channels of a budget in place; the start date, cadence and measure are fixed once created, and a usage budget keeps a cost report. A field left out keeps its value; clearSegment and clearCostReport return the budget to the whole workspace.
+         * @description Updates the name, the amounts, the scope (a segment, a cost report or the whole workspace), a usage budget's unit, the alert thresholds or the notification channels of a budget in place; the start date, cadence and measure are fixed once created, and a usage budget keeps a cost report. A field left out keeps its value; clearSegment and clearCostReport return the budget to the whole workspace. Alerts replace the thresholds: one kept at the same percent and basis keeps whether it fired this period.
          *
          *     Needs a token with `updateBudget` on the workspace.
          */
@@ -1960,6 +2226,112 @@ export interface paths {
         get: operations["ListAnomalies"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/annotations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List annotations
+         * @description Returns the workspace's annotations by date, open ones unless includeResolved is set. An unknown costReportId answers 404.
+         *
+         *     Needs a token with `viewCostReports` on the workspace.
+         */
+        get: operations["ListAnnotations"];
+        put?: never;
+        /**
+         * Create annotation
+         * @description Pins a dated note to one to ten of the workspace's cost reports. A cost report that is not one of the workspace's answers 404 naming it.
+         *
+         *     Needs a token with `updateCostReport` on the workspace.
+         */
+        post: operations["CreateAnnotation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/annotations/{annotationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get annotation
+         * @description Returns an annotation of the workspace. One whose every cost report is deleted answers 404.
+         *
+         *     Needs a token with `viewCostReports` on the workspace.
+         */
+        get: operations["GetAnnotation"];
+        /**
+         * Update annotation
+         * @description Replaces a note whole: its date, its text and its cost reports, a report left out no longer being annotated. A budget's or cost alert's annotation records what fired and is not edited.
+         *
+         *     Needs a token with `updateCostReport` on the workspace.
+         */
+        put: operations["UpdateAnnotation"];
+        post?: never;
+        /**
+         * Delete annotation
+         * @description Deletes an annotation, a budget's or cost alert's included; the cost reports it stood on stay.
+         *
+         *     Needs a token with `updateCostReport` on the workspace.
+         */
+        delete: operations["DeleteAnnotation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/annotations/{annotationId}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reopen annotation
+         * @description Shows a resolved annotation in the default list again. An open one is returned as it is.
+         *
+         *     Needs a token with `updateCostReport` on the workspace.
+         */
+        post: operations["ReopenAnnotation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/annotations/{annotationId}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve annotation
+         * @description Hides an annotation from the default list. One already resolved is returned as it is.
+         *
+         *     Needs a token with `updateCostReport` on the workspace.
+         */
+        post: operations["ResolveAnnotation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2177,6 +2549,7 @@ export interface components {
             conversionCurrency?: string | null;
             conversionMethod: components["schemas"]["FxMethod"];
             enableAutomaticSyncing: boolean;
+            blendCommitmentDiscounts: boolean;
             timeZone: string;
             reportDefaults: components["schemas"]["WorkspaceReportDefaultsResponse"];
             anomaliesExcludeMarketplace: boolean;
@@ -2223,6 +2596,7 @@ export interface components {
             conversionCurrency?: string | null;
             conversionMethod?: components["schemas"]["FxMethod"] | null;
             enableAutomaticSyncing?: boolean | null;
+            blendCommitmentDiscounts?: boolean | null;
             timeZone?: string | null;
             reportDefaults?: components["schemas"]["WorkspaceReportDefaultsRequest"] | null;
             anomaliesExcludeMarketplace?: boolean | null;
@@ -2410,8 +2784,10 @@ export interface components {
             workspaceId: components["schemas"]["WorkspacePublicId"];
             workspaceName: string;
             accessLevel: components["schemas"]["WorkspaceAccessLevel"];
+            defaultDashboardId?: components["schemas"]["DashboardPublicId"] | null;
         };
         WorkspaceAccessLevel: string;
+        DashboardPublicId: string;
         GetTeamRequest: Record<string, never>;
         PaginatedResponseOfTeamResponse: {
             links: components["schemas"]["PaginationLinks"];
@@ -2433,6 +2809,9 @@ export interface components {
         ListTeamWorkspaceAccessRequest: components["schemas"]["PaginatedRequest"] & Record<string, never>;
         SetTeamWorkspaceAccessRequest: {
             accessLevel: components["schemas"]["WorkspaceAccessLevel"];
+        };
+        SetTeamDefaultDashboardRequest: {
+            dashboardId?: components["schemas"]["DashboardPublicId"] | null;
         };
         RemoveTeamWorkspaceAccessRequest: Record<string, never>;
         UpdateTeamRequest: {
@@ -2478,6 +2857,103 @@ export interface components {
             accountIds?: string[];
             requiredKeys: string[];
         };
+        SavingsViewResponse: {
+            id: components["schemas"]["SavingsViewPublicId"];
+            title: string;
+            tab: components["schemas"]["SavingsQueueTab"];
+            source?: components["schemas"]["SavingsItemSource"] | null;
+            kind?: components["schemas"]["SavingsItemKind"] | null;
+            cloudAccountId?: components["schemas"]["ProviderPublicId"] | null;
+            /** Format: decimal */
+            minimumMonthlySaving?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt?: string | null;
+        };
+        SavingsViewPublicId: string;
+        SavingsQueueTab: string;
+        SavingsItemSource: string;
+        SavingsItemKind: string;
+        CreateSavingsViewRequest: {
+            workspaceId: components["schemas"]["WorkspacePublicId"];
+            title: string;
+            tab: components["schemas"]["SavingsQueueTab"];
+            source?: components["schemas"]["SavingsItemSource"] | null;
+            kind?: components["schemas"]["SavingsItemKind"] | null;
+            cloudAccountId?: components["schemas"]["ProviderPublicId"] | null;
+            /** Format: decimal */
+            minimumMonthlySaving?: string | null;
+        };
+        DeleteSavingsViewRequest: Record<string, never>;
+        GetSavingsViewRequest: Record<string, never>;
+        PaginatedResponseOfSavingsViewResponse: {
+            links: components["schemas"]["PaginationLinks"];
+            data: components["schemas"]["SavingsViewResponse"][];
+        };
+        ListSavingsViewsRequest: components["schemas"]["PaginatedRequest"] & Record<string, never>;
+        UpdateSavingsViewRequest: {
+            title: string;
+            tab: components["schemas"]["SavingsQueueTab"];
+            source?: components["schemas"]["SavingsItemSource"] | null;
+            kind?: components["schemas"]["SavingsItemKind"] | null;
+            cloudAccountId?: components["schemas"]["ProviderPublicId"] | null;
+            /** Format: decimal */
+            minimumMonthlySaving?: string | null;
+        };
+        SavingsItemResponse: {
+            id: components["schemas"]["SavingsItemPublicId"];
+            title: string;
+            evidence: string;
+            /** Format: decimal */
+            estimatedMonthlySaving: string;
+            currency: string;
+            costBasis: string;
+            owner: string;
+            confidence: components["schemas"]["SavingsItemRating"];
+            risk: components["schemas"]["SavingsItemRating"];
+            effort: components["schemas"]["SavingsItemRating"];
+            status: components["schemas"]["SavingsItemStatus"];
+            rejectionReason?: string | null;
+            /** Format: decimal */
+            verifiedMonthlySaving?: string | null;
+            source: components["schemas"]["SavingsItemSource"];
+            kind?: components["schemas"]["SavingsItemKind"] | null;
+            resource?: string | null;
+            scope?: string | null;
+            /** Format: date-time */
+            lastSeenAt?: string | null;
+            lastMeasurementOutcome?: components["schemas"]["SavingsVerificationOutcome"] | null;
+            lastMeasurementScope?: string | null;
+            /** Format: decimal */
+            lastMeasurementRealizedMonthly?: string | null;
+            /** Format: date-time */
+            lastMeasuredAt?: string | null;
+            /** Format: date-time */
+            acceptedAt?: string | null;
+            /** Format: date-time */
+            implementedAt?: string | null;
+            /** Format: date-time */
+            verifiedAt?: string | null;
+            /** Format: date-time */
+            rejectedAt?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt?: string | null;
+        };
+        SavingsItemPublicId: string;
+        SavingsItemRating: string;
+        SavingsItemStatus: string;
+        SavingsVerificationOutcome: string;
+        GetSavingsItemRequest: Record<string, never>;
+        PaginatedResponseOfSavingsItemResponse: {
+            links: components["schemas"]["PaginationLinks"];
+            data: components["schemas"]["SavingsItemResponse"][];
+        };
+        ListSavingsItemsRequest: components["schemas"]["PaginatedRequest"] & Record<string, never>;
+        /** @enum {string} */
+        SavingsQueueSort: "newest" | "largestSaving";
         SavedFilterCreatedResponse: {
             id: components["schemas"]["SavedFilterPublicId"];
             title: string;
@@ -2513,12 +2989,12 @@ export interface components {
             id: components["schemas"]["ProviderPublicId"];
             type: components["schemas"]["ProviderType"];
             key: components["schemas"]["ProviderKey"];
-            name: string;
+            displayName: string;
         };
         ProviderType: string;
         ConnectProviderRequest: {
             key: components["schemas"]["ProviderKey"];
-            name?: string | null;
+            displayName?: string | null;
             description?: string | null;
             parentProviderId?: components["schemas"]["ProviderPublicId"] | null;
             externalId?: string | null;
@@ -2557,7 +3033,7 @@ export interface components {
             id: components["schemas"]["ProviderPublicId"];
             type: components["schemas"]["ProviderType"];
             key: components["schemas"]["ProviderKey"];
-            name: string;
+            displayName: string;
             description?: string | null;
             status: components["schemas"]["ProviderStatus"];
             parentProviderId?: components["schemas"]["ProviderPublicId"] | null;
@@ -2620,7 +3096,7 @@ export interface components {
             fullSync?: boolean;
         };
         UpdateProviderRequest: {
-            name?: string | null;
+            displayName?: string | null;
             description?: string | null;
             clearDescription?: boolean;
             externalId?: string | null;
@@ -2634,6 +3110,45 @@ export interface components {
             /** Format: int32 */
             syncFrequencyMinutes?: number | null;
         };
+        KubernetesEfficiencyResponse: {
+            currency?: string | null;
+            level: components["schemas"]["KubernetesEfficiencyLevel"];
+            rows: components["schemas"]["KubernetesEfficiencyRowResponse"][];
+            truncated: boolean;
+            /** Format: date */
+            historyFloor?: string | null;
+            unconverted: components["schemas"]["CurrencyAmount"][];
+        };
+        KubernetesEfficiencyLevel: string;
+        KubernetesEfficiencyRowResponse: {
+            cluster: string;
+            namespace?: string | null;
+            workload?: string | null;
+            /** Format: decimal */
+            cost: string;
+            /** Format: decimal */
+            idleCost: string;
+            cpu: components["schemas"]["ResourceEfficiencyResponse"];
+            memory: components["schemas"]["ResourceEfficiencyResponse"];
+        };
+        ResourceEfficiencyResponse: {
+            /** Format: double */
+            requested: number;
+            /** Format: double */
+            used: number;
+            /** Format: double */
+            peak: number;
+            /** Format: double */
+            usedPercent?: number | null;
+            /** Format: double */
+            peakPercent?: number | null;
+        };
+        CurrencyAmount: {
+            currency: string;
+            /** Format: decimal */
+            amount: string;
+        };
+        GetKubernetesEfficiencyRequest: Record<string, never>;
         KubernetesReportAcceptedResponse: {
             id: components["schemas"]["K8sClusterPublicId"];
             cluster_id: string;
@@ -2653,6 +3168,7 @@ export interface components {
             window_end?: string;
             nodes?: components["schemas"]["KubernetesReportNode"][];
             pods?: components["schemas"]["KubernetesReportPod"][];
+            volumes?: components["schemas"]["KubernetesReportVolume"][] | null;
         };
         KubernetesReportNode: {
             name?: string;
@@ -2669,6 +3185,9 @@ export interface components {
             capacity_memory_bytes?: number;
             /** Format: int32 */
             capacity_gpu?: number;
+            gpu_resources?: {
+                [key: string]: number;
+            } | null;
             /** Format: double */
             allocatable_cpu_cores?: number;
             /** Format: int64 */
@@ -2677,6 +3196,9 @@ export interface components {
                 [key: string]: string;
             } | null;
             annotations?: {
+                [key: string]: string;
+            } | null;
+            gpu_labels?: {
                 [key: string]: string;
             } | null;
         };
@@ -2696,6 +3218,7 @@ export interface components {
                 [key: string]: string;
             } | null;
             containers?: components["schemas"]["KubernetesReportContainer"][];
+            claims?: string[] | null;
         };
         KubernetesReportContainer: {
             name?: string;
@@ -2707,6 +3230,9 @@ export interface components {
             memory_request_bytes?: number;
             /** Format: int32 */
             gpu_request?: number;
+            gpu_requests?: {
+                [key: string]: number;
+            } | null;
             /** Format: double */
             cpu_usage_core_seconds?: number;
             /** Format: double */
@@ -2719,6 +3245,25 @@ export interface components {
             cpu_usage_peak_cores?: number;
             /** Format: int64 */
             memory_usage_peak_bytes?: number;
+        };
+        KubernetesReportVolume: {
+            name?: string;
+            /** Format: int64 */
+            capacity_bytes?: number;
+            storage_class?: string | null;
+            csi_driver?: string | null;
+            volume_handle?: string | null;
+            phase?: string | null;
+            claim_namespace?: string | null;
+            claim_name?: string | null;
+            /** Format: double */
+            observed_seconds?: number;
+            storage_class_annotations?: {
+                [key: string]: string;
+            } | null;
+            claim_labels?: {
+                [key: string]: string;
+            } | null;
         };
         FolderCreatedResponse: {
             id: components["schemas"]["FolderPublicId"];
@@ -2800,7 +3345,6 @@ export interface components {
             id: components["schemas"]["DashboardPublicId"];
             title: string;
         };
-        DashboardPublicId: string;
         CreateDashboardRequest: {
             workspaceId: components["schemas"]["WorkspacePublicId"];
             title: string;
@@ -3075,6 +3619,7 @@ export interface components {
             /** Format: date */
             endDate?: string | null;
             chartType?: components["schemas"]["ChartType"];
+            chartAxis?: components["schemas"]["ChartAxis"] | null;
             dateBin?: components["schemas"]["DateBin"] | null;
             settings?: components["schemas"]["CostReportSettingsRequest"] | null;
         };
@@ -3083,9 +3628,11 @@ export interface components {
             key?: string | null;
         };
         /** @enum {string} */
-        CostGroupDimension: "provider" | "providerName" | "subAccount" | "serviceName" | "region" | "resourceName" | "chargeCategory" | "tag" | "virtualTag" | "segment" | "cluster" | "namespace" | "billingAccount" | "serviceCategory" | "serviceSubcategory" | "usageUnit" | "chargeClass" | "tagged" | "resourceId" | "commitmentStatus" | "commitmentType" | "pricingCategory" | "sku";
+        CostGroupDimension: "provider" | "providerName" | "subAccount" | "serviceName" | "region" | "resourceName" | "chargeCategory" | "tag" | "virtualTag" | "segment" | "cluster" | "namespace" | "billingAccount" | "serviceCategory" | "serviceSubcategory" | "usageUnit" | "chargeClass" | "tagged" | "resourceId" | "commitmentStatus" | "commitmentType" | "pricingCategory" | "sku" | "commitmentId" | "operation" | "chargeDescription" | "resourceType" | "productFamily" | "skuId" | "invoiceId" | "invoiceIssuer" | "billingPeriod" | "resourceGroup";
         /** @enum {string} */
         ChartType: "line" | "bar" | "stackedBar" | "area" | "pie" | "table";
+        /** @enum {string} */
+        ChartAxis: "date" | "group";
         CostReportSettingsRequest: {
             includeCredits?: boolean | null;
             includeRefunds?: boolean | null;
@@ -3100,6 +3647,9 @@ export interface components {
             measure?: components["schemas"]["CostMeasure"] | null;
             unitCostMetricId?: components["schemas"]["BusinessMetricPublicId"] | null;
             unitCostLabelFilter?: components["schemas"]["UnitCostLabelConditionRequest"][] | null;
+            unitCostCalculation?: components["schemas"]["UnitCostCalculation"] | null;
+            /** Format: int32 */
+            unitCostScale?: number | null;
         };
         CostMeasure: string;
         BusinessMetricPublicId: string;
@@ -3107,6 +3657,7 @@ export interface components {
             key: string;
             values: string[];
         };
+        UnitCostCalculation: string;
         DeleteCostReportRequest: Record<string, never>;
         CostReportDataResponse: {
             summary: components["schemas"]["ReportSummaryResponse"];
@@ -3119,6 +3670,7 @@ export interface components {
             /** Format: date */
             historyFloor?: string | null;
             comparison?: components["schemas"]["ReportComparisonResponse"] | null;
+            forecast?: components["schemas"]["ReportForecastResponse"] | null;
             /** Format: date */
             dataThrough?: string | null;
             unitCost?: components["schemas"]["ReportUnitCostResponse"] | null;
@@ -3156,11 +3708,6 @@ export interface components {
             source: string;
             description: string;
         };
-        CurrencyAmount: {
-            currency: string;
-            /** Format: decimal */
-            amount: string;
-        };
         UnitQuantity: {
             unit: string;
             /** Format: double */
@@ -3188,6 +3735,12 @@ export interface components {
             /** Format: double */
             percent: number;
             unit?: string | null;
+            /** Format: decimal */
+            previousCost?: string | null;
+            /** Format: decimal */
+            comparedCost?: string | null;
+            /** Format: double */
+            changePercent?: number | null;
         };
         ReportComparisonResponse: {
             /** Format: date */
@@ -3204,10 +3757,26 @@ export interface components {
             /** Format: decimal */
             cost: string;
         };
+        ReportForecastResponse: {
+            series: components["schemas"]["ReportForecastPointResponse"][];
+        };
+        ReportForecastPointResponse: {
+            /** Format: date */
+            date: string;
+            /** Format: decimal */
+            amount: string;
+            /** Format: decimal */
+            lowerBound: string;
+            /** Format: decimal */
+            upperBound: string;
+        };
         ReportUnitCostResponse: {
             metricId: components["schemas"]["BusinessMetricPublicId"];
             name: string;
             unit: string;
+            calculation: components["schemas"]["UnitCostCalculation"];
+            /** Format: int32 */
+            scale: number;
             currency?: string | null;
             /** Format: decimal */
             average?: string | null;
@@ -3220,6 +3789,8 @@ export interface components {
             metricAmount?: string | null;
             /** Format: decimal */
             unitCost?: string | null;
+            /** Format: decimal */
+            value?: string | null;
         };
         GetCostReportDataRequest: Record<string, never>;
         CostReportResponse: {
@@ -3234,6 +3805,7 @@ export interface components {
             /** Format: date */
             endDate?: string | null;
             chartType: string;
+            chartAxis: string;
             dateBin: string;
             settings: components["schemas"]["CostReportSettingsResponse"];
             /** Format: date-time */
@@ -3260,6 +3832,9 @@ export interface components {
             measure: components["schemas"]["CostMeasure"];
             unitCostMetricId?: components["schemas"]["BusinessMetricPublicId"] | null;
             unitCostLabelFilter: components["schemas"]["UnitCostLabelConditionResponse"][];
+            unitCostCalculation: components["schemas"]["UnitCostCalculation"];
+            /** Format: int32 */
+            unitCostScale: number;
         };
         UnitCostLabelConditionResponse: {
             key: string;
@@ -3286,6 +3861,7 @@ export interface components {
             endDate?: string | null;
             clearEndDate?: boolean;
             chartType?: components["schemas"]["ChartType"] | null;
+            chartAxis?: components["schemas"]["ChartAxis"] | null;
             dateBin?: components["schemas"]["DateBin"] | null;
             settings?: components["schemas"]["CostReportSettingsRequest"] | null;
         };
@@ -3294,6 +3870,139 @@ export interface components {
             query?: string | null;
         };
         TranslateCostFilterRequest: Record<string, never>;
+        CostEstimateReceiptResponse: {
+            id: components["schemas"]["CostEstimatePublicId"];
+            state: components["schemas"]["CostEstimateState"];
+            /** Format: date */
+            appliedOn?: string | null;
+        };
+        CostEstimatePublicId: string;
+        CostEstimateState: string;
+        ApplyCostEstimateRequest: {
+            workspaceId: components["schemas"]["WorkspacePublicId"];
+            repository?: string | null;
+            /** Format: int32 */
+            pullRequest?: number | null;
+            plan?: string | null;
+            resources?: components["schemas"]["AppliedResourceRequest"][] | null;
+        };
+        AppliedResourceRequest: {
+            address: string;
+            resourceIds: string[];
+        };
+        CostEstimateResponse: {
+            id: components["schemas"]["CostEstimatePublicId"];
+            workspaceId: components["schemas"]["WorkspacePublicId"];
+            repository?: string | null;
+            /** Format: int32 */
+            pullRequest?: number | null;
+            plan?: string | null;
+            source: string;
+            sourceVersion?: string | null;
+            commit?: string | null;
+            url?: string | null;
+            currency: string;
+            tag?: components["schemas"]["CostEstimateTagResponse"] | null;
+            state: components["schemas"]["CostEstimateState"];
+            /** Format: date */
+            appliedOn?: string | null;
+            outcome?: components["schemas"]["CostEstimateOutcome"] | null;
+            planned: components["schemas"]["CostEstimatePlannedResponse"];
+            actual?: components["schemas"]["CostEstimateActualResponse"] | null;
+            /** Format: int32 */
+            resourceCount: number;
+            resources?: components["schemas"]["CostEstimateResourceResponse"][] | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt?: string | null;
+            /** Format: date-time */
+            closedAt?: string | null;
+        };
+        CostEstimateTagResponse: {
+            key: string;
+            value: string;
+        };
+        CostEstimateOutcome: string;
+        CostEstimatePlannedResponse: {
+            /** Format: decimal */
+            monthlyCostBefore: string;
+            /** Format: decimal */
+            monthlyCostAfter: string;
+            /** Format: decimal */
+            monthlyChange: string;
+            /** Format: int32 */
+            unpricedResources: number;
+        };
+        CostEstimateActualResponse: {
+            /** Format: decimal */
+            monthlyCostBefore: string;
+            /** Format: decimal */
+            monthlyCostAfter: string;
+            /** Format: decimal */
+            monthlyChange: string;
+            /** Format: decimal */
+            monthlyVariance: string;
+            billingCurrency?: string | null;
+            /** Format: decimal */
+            exchangeRate?: string | null;
+        };
+        CostEstimateResourceResponse: {
+            address: string;
+            type: string;
+            change: components["schemas"]["CostEstimateChange"];
+            /** Format: decimal */
+            monthlyCostBefore?: string | null;
+            /** Format: decimal */
+            monthlyCostAfter?: string | null;
+            /** Format: decimal */
+            plannedChange?: string | null;
+            resourceIds: string[];
+            appliedResourceIds: string[];
+            match?: components["schemas"]["CostEstimateLineMatch"] | null;
+            /** Format: decimal */
+            actualMonthlyCostBefore?: string | null;
+            /** Format: decimal */
+            actualMonthlyCostAfter?: string | null;
+            /** Format: decimal */
+            actualChange?: string | null;
+        };
+        CostEstimateChange: string;
+        CostEstimateLineMatch: string;
+        GetCostEstimateRequest: Record<string, never>;
+        PaginatedResponseOfCostEstimateResponse: {
+            links: components["schemas"]["PaginationLinks"];
+            data: components["schemas"]["CostEstimateResponse"][];
+        };
+        ListCostEstimatesRequest: components["schemas"]["PaginatedRequest"] & Record<string, never>;
+        SubmitCostEstimateRequest: {
+            workspaceId: components["schemas"]["WorkspacePublicId"];
+            repository?: string | null;
+            /** Format: int32 */
+            pullRequest?: number | null;
+            plan?: string | null;
+            source: string;
+            sourceVersion?: string | null;
+            commit?: string | null;
+            url?: string | null;
+            currency: string;
+            tag?: components["schemas"]["CostEstimateTagRequest"] | null;
+            resources: components["schemas"]["CostEstimateResourceRequest"][];
+        };
+        CostEstimateTagRequest: {
+            key: string;
+            value: string;
+        };
+        CostEstimateResourceRequest: {
+            address: string;
+            type: string;
+            change: components["schemas"]["CostEstimateChange"];
+            /** Format: decimal */
+            monthlyCostBefore?: string | null;
+            /** Format: decimal */
+            monthlyCostAfter?: string | null;
+            resourceIds?: string[] | null;
+        };
         CostDataResponse: {
             links: components["schemas"]["PaginationLinks"];
             data: components["schemas"]["CostDataPoint"][];
@@ -3329,12 +4038,14 @@ export interface components {
             totalCost?: string | null;
             currency?: string | null;
             presentation: components["schemas"]["CurrencyPresentation"];
+            commitmentDiscounts: components["schemas"]["CommitmentDiscountPlacement"];
             /** Format: date */
             historyFloor?: string | null;
             /** Format: date */
             dataThrough?: string | null;
             dataVersion: string;
         };
+        CommitmentDiscountPlacement: string;
         GetCostDataRequest: components["schemas"]["PaginatedRequest"] & Record<string, never>;
         CostForecastResponse: {
             /** Format: decimal */
@@ -3374,6 +4085,7 @@ export interface components {
             /** Format: double */
             costChangePercent?: number | null;
             presentation: components["schemas"]["CurrencyPresentation"];
+            commitmentDiscounts: components["schemas"]["CommitmentDiscountPlacement"];
             topServices: components["schemas"]["ServiceCostBreakdown"][];
             byProvider: components["schemas"]["ProviderCostBreakdown"][];
             /** Format: date */
@@ -3420,7 +4132,7 @@ export interface components {
         };
         AlertThresholdType: string;
         /** @enum {string} */
-        ComparisonPeriod: "previousDay" | "previousWeek" | "previousMonth" | "sameDayLastMonth";
+        ComparisonPeriod: "previousDay" | "previousWeek" | "previousMonth" | "sameDayLastMonth" | "previousQuarter";
         DeleteCostAlertRequest: Record<string, never>;
         CostAlertResponse: {
             id: components["schemas"]["CostAlertPublicId"];
@@ -3516,6 +4228,80 @@ export interface components {
             supersededAt: string | null;
         };
         DpaExecutionPublicId: string;
+        CommitmentCoverageResponse: {
+            currency?: string | null;
+            granularity: components["schemas"]["DateBin"];
+            data: components["schemas"]["CommitmentFiguresResponse"][];
+            totals: components["schemas"]["CommitmentFiguresResponse"][];
+            /** Format: date */
+            historyFloor?: string | null;
+            unconverted: components["schemas"]["CurrencyAmount"][];
+        };
+        CommitmentFiguresResponse: {
+            /** Format: date */
+            date?: string | null;
+            provider: string;
+            /** Format: decimal */
+            coveredOnDemandCost: string;
+            /** Format: decimal */
+            eligibleOnDemandCost: string;
+            /** Format: decimal */
+            actualCost: string;
+            /** Format: decimal */
+            usedCommitment: string;
+            /** Format: decimal */
+            unusedCommitment?: string | null;
+            /** Format: double */
+            coveragePercent?: number | null;
+            /** Format: double */
+            effectiveSavingsRatePercent?: number | null;
+            /** Format: double */
+            utilizationPercent?: number | null;
+        };
+        GetCommitmentCoverageRequest: Record<string, never>;
+        PaginatedResponseOfCommitmentResponse: {
+            links: components["schemas"]["PaginationLinks"];
+            data: components["schemas"]["CommitmentResponse"][];
+        };
+        CommitmentResponse: {
+            id: string;
+            providerId: components["schemas"]["ProviderPublicId"];
+            providerName: string;
+            provider: components["schemas"]["ProviderKey"];
+            type: string;
+            description: string;
+            account: string;
+            region: string;
+            service: string;
+            status: components["schemas"]["CommitmentExpiryStatus"];
+            providerStatus: string;
+            /** Format: date-time */
+            startsAt?: string | null;
+            /** Format: date-time */
+            endsAt?: string | null;
+            /** Format: int32 */
+            daysUntilExpiry?: number | null;
+            /** Format: int32 */
+            termYears?: number | null;
+            paymentOption?: string | null;
+            /** Format: decimal */
+            hourlyCommitment?: string | null;
+            /** Format: decimal */
+            fullTermCost?: string | null;
+            /** Format: double */
+            utilizationPercentage?: number | null;
+            /** Format: decimal */
+            unusedCost?: string | null;
+            currency: string;
+            /** Format: date */
+            utilizationFrom: string;
+            /** Format: date */
+            utilizationTo: string;
+            /** Format: date-time */
+            lastReadAt: string;
+        };
+        CommitmentExpiryStatus: string;
+        ListCommitmentsRequest: components["schemas"]["PaginatedRequest"] & Record<string, never>;
         BusinessMetricResponse: {
             id: components["schemas"]["BusinessMetricPublicId"];
             name: string;
@@ -3631,11 +4417,13 @@ export interface components {
         BudgetAlertResponse: {
             /** Format: int32 */
             thresholdPercent: number;
+            basis: components["schemas"]["BudgetAlertBasis"];
             appIds: components["schemas"]["AppPublicId"][];
             isTriggered: boolean;
             /** Format: date-time */
             triggeredAt?: string | null;
         };
+        BudgetAlertBasis: string;
         CreateBudgetRequest: {
             workspaceId: components["schemas"]["WorkspacePublicId"];
             name: string;
@@ -3670,7 +4458,10 @@ export interface components {
         BudgetAlertRequest: {
             /** Format: int32 */
             thresholdPercent?: number;
+            basis?: components["schemas"]["BudgetAlertBasisValue"];
         };
+        /** @enum {string} */
+        BudgetAlertBasisValue: "actual" | "forecast";
         DeleteBudgetRequest: Record<string, never>;
         GetBudgetRequest: Record<string, never>;
         PaginatedResponseOfBudgetResponse: {
@@ -3689,6 +4480,7 @@ export interface components {
             clearCostReport?: boolean;
             appIds?: components["schemas"]["AppPublicId"][] | null;
             usageUnit?: string | null;
+            alerts?: components["schemas"]["BudgetAlertRequest"][] | null;
         };
         EntitlementResponse: {
             planCode: string;
@@ -3856,10 +4648,68 @@ export interface components {
             acknowledgedAt?: string | null;
             /** Format: date-time */
             detectedAt: string;
+            attributedResourceId?: string | null;
+            contributors: components["schemas"]["AnomalyContributorResponse"][];
+            attributedSku?: string | null;
+            skuContributors: components["schemas"]["AnomalySkuContributorResponse"][];
         };
         AnomalyStatus: string;
         AnomalyStatusReason: string;
+        AnomalyContributorResponse: {
+            accountId?: string | null;
+            resourceId: string;
+            /** Format: decimal */
+            increase: string;
+        };
+        AnomalySkuContributorResponse: {
+            sku: string;
+            /** Format: decimal */
+            increase: string;
+        };
         ListAnomaliesRequest: components["schemas"]["PaginatedRequest"] & Record<string, never>;
+        AnnotationResponse: {
+            id: components["schemas"]["AnnotationPublicId"];
+            /** Format: date */
+            date: string;
+            source: components["schemas"]["AnnotationSource"];
+            text?: string | null;
+            costReportIds: components["schemas"]["CostReportPublicId"][];
+            budgetId?: components["schemas"]["BudgetPublicId"] | null;
+            costAlertId?: components["schemas"]["CostAlertPublicId"] | null;
+            sourceName?: string | null;
+            /** Format: int32 */
+            thresholdPercent?: number | null;
+            thresholdBasis?: components["schemas"]["BudgetAlertBasis"] | null;
+            createdByUserId?: components["schemas"]["UserPublicId"] | null;
+            /** Format: date-time */
+            resolvedAt?: string | null;
+            resolvedByUserId?: components["schemas"]["UserPublicId"] | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt?: string | null;
+        };
+        AnnotationPublicId: string;
+        AnnotationSource: string;
+        CreateAnnotationRequest: {
+            workspaceId: components["schemas"]["WorkspacePublicId"];
+            /** Format: date */
+            date: string;
+            text: string;
+            costReportIds: components["schemas"]["CostReportPublicId"][];
+        };
+        AnnotationIdRequest: Record<string, never>;
+        PaginatedResponseOfAnnotationResponse: {
+            links: components["schemas"]["PaginationLinks"];
+            data: components["schemas"]["AnnotationResponse"][];
+        };
+        ListAnnotationsRequest: components["schemas"]["PaginatedRequest"] & Record<string, never>;
+        UpdateAnnotationRequest: {
+            /** Format: date */
+            date: string;
+            text: string;
+            costReportIds: components["schemas"]["CostReportPublicId"][];
+        };
         PaginatedResponseOfAllocationRuleResponse: {
             links: components["schemas"]["PaginationLinks"];
             data: components["schemas"]["AllocationRuleResponse"][];
@@ -5456,6 +6306,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ApiError"];
                 };
             };
+            /** @description Another enabled virtual tag in the workspace has this key (conflict); nothing was changed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
             /** @description The If-Match header names a version the resource no longer has; read it again and retry */
             412: {
                 headers: {
@@ -6846,6 +7705,97 @@ export interface operations {
             503: components["responses"]["ServiceUnavailable"];
         };
     };
+    SetTeamDefaultDashboard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["schemas"]["TeamPublicId"];
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetTeamDefaultDashboardRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamWorkspaceAccessResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body arrived too slowly and the server stopped reading it; send it again */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body is larger than this operation accepts */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
     GetTagKey: {
         parameters: {
             query?: never;
@@ -7172,6 +8122,658 @@ export interface operations {
                 };
             };
             /** @description A query value cannot be read, or page × limit passes the furthest a list reaches (validation_failed; errors[0] names the value) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    ListSavingsViews: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+                /** @description The page to return, counted from 1. A page below 1 reads page 1; one past the last returns no items. */
+                page?: number;
+                /** @description Items per page, from 1 to 100. A larger value is clamped to 100, a smaller one to 1. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponseOfSavingsViewResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    CreateSavingsView: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description A unique value, at most 255 printable ASCII characters, such as a UUID, that makes retrying this create safe. A retry with the same key and the same request within 24 hours answers the first response again, marked Idempotent-Replayed: true, and creates nothing; the same key with another request answers 422 idempotency_key_reused. A key is kept only for a create that succeeded. Without it, every request creates. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSavingsViewRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    /** @description The stored version of the resource, to send back as If-Match. */
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavingsViewResponse"];
+                };
+            };
+            /** @description title is missing or too long, tab, source or kind is not one of its values, minimumMonthlySaving is negative, or cloudAccountId is not a connection of this organization */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body arrived too slowly and the server stopped reading it; send it again */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description A request with this Idempotency-Key is still running; retry it shortly */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body is larger than this operation accepts */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The Idempotency-Key was already used with another request to this operation; send this one under a new key */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    GetSavingsView: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+            };
+            header?: never;
+            path: {
+                savingsViewId: components["schemas"]["SavingsViewPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    /** @description The stored version of the resource, to send back as If-Match. */
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavingsViewResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    UpdateSavingsView: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+            };
+            header?: {
+                /** @description Applies the write only while the resource still has this ETag, and answers 412 precondition_failed otherwise. Without it, the last write wins. */
+                "If-Match"?: string;
+            };
+            path: {
+                savingsViewId: components["schemas"]["SavingsViewPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSavingsViewRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    /** @description The stored version of the resource, to send back as If-Match. */
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavingsViewResponse"];
+                };
+            };
+            /** @description title is missing or too long, tab, source or kind is not one of its values, minimumMonthlySaving is negative, or cloudAccountId is not a connection of this organization */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body arrived too slowly and the server stopped reading it; send it again */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The If-Match header names a version the resource no longer has; read it again and retry */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body is larger than this operation accepts */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    DeleteSavingsView: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+            };
+            header?: {
+                /** @description Applies the write only while the resource still has this ETag, and answers 412 precondition_failed otherwise. Without it, the last write wins. */
+                "If-Match"?: string;
+            };
+            path: {
+                savingsViewId: components["schemas"]["SavingsViewPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The If-Match header names a version the resource no longer has; read it again and retry */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    GetSavingsItem: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+            };
+            header?: never;
+            path: {
+                savingsItemId: components["schemas"]["SavingsItemPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavingsItemResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    ListSavingsItems: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+                tab?: components["schemas"]["SavingsQueueTab"] | null;
+                source?: components["schemas"]["SavingsItemSource"] | null;
+                kind?: components["schemas"]["SavingsItemKind"] | null;
+                cloudAccountId?: components["schemas"]["ProviderPublicId"] | null;
+                minimumMonthlySaving?: string | null;
+                sort?: components["schemas"]["SavingsQueueSort"];
+                /** @description The page to return, counted from 1. A page below 1 reads page 1; one past the last returns no items. */
+                page?: number;
+                /** @description Items per page, from 1 to 100. A larger value is clamped to 100, a smaller one to 1. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponseOfSavingsItemResponse"];
+                };
+            };
+            /** @description tab, source, kind or sort is not one of its values, or minimumMonthlySaving is negative or not a number */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -8644,6 +10246,96 @@ export interface operations {
                 };
             };
             /** @description The organization has more connections than the limit set for it and this one is paused (limit_exceeded) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    GetKubernetesEfficiency: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+                startDate: string;
+                endDate: string;
+                level: components["schemas"]["KubernetesEfficiencyLevel"];
+                filter?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KubernetesEfficiencyResponse"];
+                };
+            };
+            /** @description level is missing or not a level, startDate or endDate is missing or not a date, endDate is before startDate, or filter is not a valid cost filter */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The read needs more time or memory than one request may use; narrow the date range, filters or grouping */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12629,6 +14321,392 @@ export interface operations {
             503: components["responses"]["ServiceUnavailable"];
         };
     };
+    ApplyCostEstimate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyCostEstimateRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostEstimateReceiptResponse"];
+                };
+            };
+            /** @description The reference is missing or names both kinds, over 2,000 resources, an address named twice, or a resource without ids, with over 3, or with one over 512 characters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body arrived too slowly and the server stopped reading it; send it again */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The estimate was already applied with other ids, or expired */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The body is larger than 5 MiB */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    GetCostEstimate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                estimateId: components["schemas"]["CostEstimatePublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostEstimateResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    ListCostEstimates: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+                state?: components["schemas"]["CostEstimateState"] | null;
+                repository?: string | null;
+                pullRequest?: number | null;
+                plan?: string | null;
+                /** @description The page to return, counted from 1. A page below 1 reads page 1; one past the last returns no items. */
+                page?: number;
+                /** @description Items per page, from 1 to 100. A larger value is clamped to 100, a smaller one to 1. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponseOfCostEstimateResponse"];
+                };
+            };
+            /** @description workspaceId is missing, or a query parameter is not of its type */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    SubmitCostEstimate: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description A unique value, at most 255 printable ASCII characters, such as a UUID, that makes retrying this create safe. A retry with the same key and the same request within 24 hours answers the first response again, marked Idempotent-Replayed: true, and creates nothing; the same key with another request answers 422 idempotency_key_reused. A key is kept only for a create that succeeded. Without it, every request creates. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitCostEstimateRequest"];
+            };
+        };
+        responses: {
+            /** @description The estimate posted earlier for the same reference, replaced */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostEstimateReceiptResponse"];
+                };
+            };
+            /** @description The estimate, created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostEstimateReceiptResponse"];
+                };
+            };
+            /** @description A field is missing or invalid: no reference or both kinds, over 2,000 resources, an address named twice, over 3 ids or an id over 512 characters on a resource, ids on a created resource or with a tag, a URL that is not https, a currency Costfluent does not support, or a monthly cost out of range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body arrived too slowly and the server stopped reading it; send it again */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The estimate for this reference was already applied, reconciled or closed; or: a request with this Idempotency-Key is still running; retry it shortly */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The body is larger than 5 MiB */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The workspace already holds 1,000 proposed or applied estimates (limit_exceeded); nothing was stored; or: the Idempotency-Key was already used with another request to this operation; send this one under a new key */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
     GetCostData: {
         parameters: {
             query: {
@@ -12636,7 +14714,7 @@ export interface operations {
                 endDate: string;
                 workspaceId?: components["schemas"]["WorkspacePublicId"] | null;
                 granularity?: components["schemas"]["DateBin"];
-                /** @description Up to three grouping slots, repeated in order: `groupBy=serviceName&groupBy=tag:team`. A slot is one of `provider`, `providerName`, `subAccount`, `serviceName`, `region`, `resourceName`, `chargeCategory`, `segment`, `cluster`, `namespace`, `billingAccount`, `serviceCategory`, `serviceSubcategory`, `usageUnit`, `chargeClass`, `tagged`, `resourceId`, `commitmentStatus`, `commitmentType`, `pricingCategory`, `sku`, or `tag:<key>` for a tag key and `virtualTag:<id>` for a virtual tag's id. Names match in any case. A `segment` or `virtualTag` slot needs `workspaceId`. The operation's description says how each row's `dimensions` is keyed. */
+                /** @description Up to three grouping slots, repeated in order: `groupBy=serviceName&groupBy=tag:team`. A slot is one of `provider`, `providerName`, `subAccount`, `serviceName`, `region`, `resourceName`, `chargeCategory`, `segment`, `cluster`, `namespace`, `billingAccount`, `serviceCategory`, `serviceSubcategory`, `usageUnit`, `chargeClass`, `tagged`, `resourceId`, `commitmentStatus`, `commitmentType`, `pricingCategory`, `sku`, `commitmentId`, `operation`, `chargeDescription`, `resourceType`, `productFamily`, `skuId`, `invoiceId`, `invoiceIssuer`, `billingPeriod`, `resourceGroup`, or `tag:<key>` for a tag key and `virtualTag:<id>` for a virtual tag's id. Names match in any case. A `segment` or `virtualTag` slot needs `workspaceId`. The operation's description says how each row's `dimensions` is keyed. */
                 groupBy?: string[] | null;
                 cloudAccountIds?: string[] | null;
                 filter?: string | null;
@@ -13690,6 +15768,185 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DpaStatusResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    GetCommitmentCoverage: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+                startDate: string;
+                endDate: string;
+                granularity?: components["schemas"]["DateBin"];
+                filter?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitmentCoverageResponse"];
+                };
+            };
+            /** @description startDate or endDate is missing or not a date, endDate is before startDate, granularity is cumulative or not a granularity, or filter is not a valid cost filter */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The read needs more time or memory than one request may use; narrow the date range, filters or grouping */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    ListCommitments: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+                provider?: components["schemas"]["ProviderKey"] | null;
+                status?: components["schemas"]["CommitmentExpiryStatus"] | null;
+                type?: string | null;
+                service?: string | null;
+                account?: string | null;
+                region?: string | null;
+                termYears?: number | null;
+                paymentOption?: string | null;
+                /** @description The page to return, counted from 1. A page below 1 reads page 1; one past the last returns no items. */
+                page?: number;
+                /** @description Items per page, from 1 to 100. A larger value is clamped to 100, a smaller one to 1. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponseOfCommitmentResponse"];
+                };
+            };
+            /** @description A filter is not one of its values, such as a status, termYears or paymentOption the list never shows */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
                 };
             };
             /** @description Unauthorized */
@@ -15689,6 +17946,691 @@ export interface operations {
             };
             /** @description The resource does not exist or is not visible to this token */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    ListAnnotations: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+                costReportId?: components["schemas"]["CostReportPublicId"] | null;
+                startDate?: string | null;
+                endDate?: string | null;
+                includeResolved?: boolean;
+                /** @description The page to return, counted from 1. A page below 1 reads page 1; one past the last returns no items. */
+                page?: number;
+                /** @description Items per page, from 1 to 100. A larger value is clamped to 100, a smaller one to 1. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponseOfAnnotationResponse"];
+                };
+            };
+            /** @description startDate is after endDate, or a query parameter is not of its type */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    CreateAnnotation: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description A unique value, at most 255 printable ASCII characters, such as a UUID, that makes retrying this create safe. A retry with the same key and the same request within 24 hours answers the first response again, marked Idempotent-Replayed: true, and creates nothing; the same key with another request answers 422 idempotency_key_reused. A key is kept only for a create that succeeded. Without it, every request creates. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAnnotationRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    /** @description The stored version of the resource, to send back as If-Match. */
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnotationResponse"];
+                };
+            };
+            /** @description text is missing or longer than 1,000 characters, or costReportIds names no report or more than ten */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body arrived too slowly and the server stopped reading it; send it again */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description A request with this Idempotency-Key is still running; retry it shortly */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body is larger than this operation accepts */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The Idempotency-Key was already used with another request to this operation; send this one under a new key */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    GetAnnotation: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+            };
+            header?: never;
+            path: {
+                annotationId: components["schemas"]["AnnotationPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    /** @description The stored version of the resource, to send back as If-Match. */
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnotationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    UpdateAnnotation: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+            };
+            header?: {
+                /** @description Applies the write only while the resource still has this ETag, and answers 412 precondition_failed otherwise. Without it, the last write wins. */
+                "If-Match"?: string;
+            };
+            path: {
+                annotationId: components["schemas"]["AnnotationPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAnnotationRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    /** @description The stored version of the resource, to send back as If-Match. */
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnotationResponse"];
+                };
+            };
+            /** @description text is missing or longer than 1,000 characters, or costReportIds names no report or more than ten */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body arrived too slowly and the server stopped reading it; send it again */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description the annotation was written by a budget or cost alert; resolve or delete it instead */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The If-Match header names a version the resource no longer has; read it again and retry */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body is larger than this operation accepts */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    DeleteAnnotation: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+            };
+            header?: {
+                /** @description Applies the write only while the resource still has this ETag, and answers 412 precondition_failed otherwise. Without it, the last write wins. */
+                "If-Match"?: string;
+            };
+            path: {
+                annotationId: components["schemas"]["AnnotationPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The If-Match header names a version the resource no longer has; read it again and retry */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    ReopenAnnotation: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+            };
+            header?: {
+                /** @description Applies the write only while the resource still has this ETag, and answers 412 precondition_failed otherwise. Without it, the last write wins. */
+                "If-Match"?: string;
+            };
+            path: {
+                annotationId: components["schemas"]["AnnotationPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    /** @description The stored version of the resource, to send back as If-Match. */
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnotationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The If-Match header names a version the resource no longer has; read it again and retry */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    ResolveAnnotation: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+            };
+            header?: {
+                /** @description Applies the write only while the resource still has this ETag, and answers 412 precondition_failed otherwise. Without it, the last write wins. */
+                "If-Match"?: string;
+            };
+            path: {
+                annotationId: components["schemas"]["AnnotationPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    /** @description The stored version of the resource, to send back as If-Match. */
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnotationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The If-Match header names a version the resource no longer has; read it again and retry */
+            412: {
                 headers: {
                     [name: string]: unknown;
                 };

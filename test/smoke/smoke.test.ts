@@ -68,7 +68,7 @@ describe("against the API", { skip: !(baseUrl && token) && "COSTFLUENT_SMOKE_BAS
 
   it("reads costs back as exact decimal strings", async () => {
     const currency = (await firstWorkspace()).currency;
-    const { data: provider } = await client.POST("/v1/providers", { body: { key: "custom", name, credentials: {} } });
+    const { data: provider } = await client.POST("/v1/providers", { body: { key: "custom", displayName: name, credentials: {} } });
     assert.ok(provider);
     const { data: submitted } = await client.POST("/v1/custom-providers/{providerId}/costs", {
       params: { path: { providerId: provider.id } },
