@@ -84,9 +84,12 @@ export class CostfluentError extends Error {
     return this.problem?.errors ?? [];
   }
 
-  /** The API found no such object. A proxy's plain 404 says nothing about the object, so it is not one. */
+  /**
+   * The API found no such object: a 404 with the code `not_found`. Another 404 the API answers is its
+   * own answer but says nothing about the object, and neither does a proxy's plain 404.
+   */
   get isNotFound(): boolean {
-    return this.status === 404 && this.problem !== undefined;
+    return this.status === 404 && this.code === "not_found";
   }
 
   get isRateLimited(): boolean {

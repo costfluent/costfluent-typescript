@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { type RequestListener, type Server, createServer } from "node:http";
 import { describe, it } from "node:test";
 
-import { CONTRACT_SHA256, CostfluentError, VERSION, type components } from "../src/index.ts";
+import { CONTRACT_SHA256, CostfluentError, VERSION, type components, createClient } from "../src/index.ts";
+import { IDEMPOTENT_CREATES } from "../src/contract.ts";
 import { FakeApi, TOKEN, json, problem } from "./fake-api.ts";
 
 const folder = () => json(201, { id: "fld_1", title: "Finance" });
@@ -45,6 +47,13 @@ describe("requests", () => {
     assert.equal(api.requests[0]?.headers.has("Idempotency-Key"), false);
   });
 
+  it("send no field the caller left out, so the API applies its default", async () => {
+    const api = new FakeApi(json(201, { id: "crp_1", title: "Everything" }));
+    await api.client().POST("/v1/cost-reports", { body: { workspaceId: "ws_1", title: "Everything" } });
+
+    assert.equal(await api.requests[0]?.text(), JSON.stringify({ workspaceId: "ws_1", title: "Everything" }));
+  });
+
   it("reach a base URL with a path prefix", async () => {
     const api = new FakeApi(folder());
     await api.client({ baseUrl: "https://gateway.example/costfluent/" }).POST("/v1/folders", { body: newFolder });
@@ -53,6 +62,80 @@ describe("requests", () => {
     assert.equal(api.requests[0]?.headers.has("Idempotency-Key"), true);
   });
 });
+
+// The token travels with every request, so the base URL must use https, but to this machine.
+describe("the base URL", () => {
+  for (const baseUrl of [
+    "http://api.costfluent.com",
+    "http://10.0.0.5:8080",
+    "http://[::2]:8080",
+    "HTTP://api.costfluent.com",
+    "http://localhost.evil.example",
+    "http://127.0.0.2",
+    "ftp://api.costfluent.com",
+    "api.costfluent.com",
+    "https://",
+  ]) {
+    it(`is refused before any request when it would send the token in clear: ${baseUrl}`, () => {
+      const api = new FakeApi(folder());
+      assert.throws(() => api.client({ baseUrl }), {
+        name: "TypeError",
+        message: /must use https|is not a URL/,
+      });
+      assert.equal(api.requests.length, 0);
+    });
+  }
+
+  for (const baseUrl of [
+    "https://api.costfluent.com",
+    "HTTPS://api.costfluent.com",
+    "https://10.0.0.5:8443/costfluent",
+    "http://localhost:8080",
+    "http://LOCALHOST:8080",
+    "http://127.0.0.1",
+    "http://[::1]:8080",
+  ]) {
+    it(`is accepted with https or plain http to this machine: ${baseUrl}`, async () => {
+      const api = new FakeApi(folder());
+      await api.client({ baseUrl }).POST("/v1/folders", { body: newFolder });
+
+      assert.equal(api.requests[0]?.headers.get("Authorization"), `Bearer ${TOKEN}`);
+    });
+  }
+
+  it("is the API's own by default", () => {
+    createClient({ token: TOKEN });
+  });
+
+  // fetch follows a redirect itself; https to http always changes the origin, as a port does here.
+  it("keeps the token from a redirect's target on another origin", async () => {
+    const target = await listen((request, response) => {
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ authorization: request.headers.authorization ?? null }));
+    });
+    const origin = await listen((_request, response) => {
+      response.writeHead(302, { Location: `${target.url}/v1/me` });
+      response.end();
+    });
+    try {
+      const { data, response } = await createClient({ token: TOKEN, baseUrl: origin.url, maxRetries: 0 }).GET("/v1/me");
+
+      assert.equal(response.url, `${target.url}/v1/me`);
+      assert.deepEqual(data, { authorization: null });
+    } finally {
+      origin.server.close();
+      target.server.close();
+    }
+  });
+});
+
+async function listen(handler: RequestListener): Promise<{ server: Server; url: string }> {
+  const server = createServer(handler);
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  assert.ok(address !== null && typeof address === "object");
+  return { server, url: `http://127.0.0.1:${address.port}` };
+}
 
 describe("errors", () => {
   it("throw the typed not-found error for a missing object", async () => {
@@ -70,6 +153,40 @@ describe("errors", () => {
     assert.equal(error.problem?.traceId, "00-abc-01");
     assert.equal(error.requestId, "req_1");
     assert.match(error.message, /not_found: No folder fld_9\./);
+  });
+
+  it("isNotFound is true only for the not_found code", async () => {
+    // Another 404 the API answers, such as one for a path it does not serve, leaves the object as
+    // it was: a caller that took it as gone would forget an object that still exists.
+    const problemType = { "Content-Type": "application/problem+json" };
+    const cases = {
+      not_found: [() => problem(404, "not_found"), true],
+      "another code": [() => problem(404, "operation_not_found"), false],
+      "no code": [
+        () => new Response(JSON.stringify({ type: "about:blank", title: "x", status: 404 }), { status: 404, headers: problemType }),
+        false,
+      ],
+      "a body that does not parse": [
+        () => new Response('{"status": 404, "code": "not_fo', { status: 404, headers: problemType }),
+        false,
+      ],
+      "plain text": [
+        () => new Response("404 page not found", { status: 404, headers: { "Content-Type": "text/plain" } }),
+        false,
+      ],
+    } as const;
+    for (const [name, [reply, missing]] of Object.entries(cases)) {
+      const api = new FakeApi(reply(), reply(), reply(), reply());
+
+      const error = await api
+        .client()
+        .GET("/v1/folders/{folderId}", { params: { path: { folderId: "fld_1" }, query: { workspaceId: "ws_1" } } })
+        .catch((caught: unknown) => caught);
+
+      assert.ok(error instanceof CostfluentError, `${name}: ${String(error)}`);
+      assert.equal(error.status, 404, name);
+      assert.equal(error.isNotFound, missing, name);
+    }
   });
 
   it("carry a validation error's fields", async () => {
@@ -227,9 +344,44 @@ describe("money", () => {
   });
 });
 
+describe("report data", () => {
+  it("names the resources, accounts and clusters its groups key", async () => {
+    const report: components["schemas"]["CostReportDataResponse"] = {
+      summary: {
+        presentation: { conversions: [], unconverted: [], totalsByCurrency: [] },
+        measure: "cost",
+        totalsByUnit: [],
+      },
+      series: [],
+      breakdown: [{ keys: ["i-0abc", "222222222222", "c-prod-eu"], isOther: false, cost: "12.5", percent: 100 }],
+      startDate: "2026-10-01",
+      endDate: "2026-10-31",
+      resourceNames: { "i-0abc": "checkout-api" },
+      accountNames: { "222222222222": "prod-payments" },
+      clusterNames: { "c-prod-eu": "Production EU" },
+    };
+    const api = new FakeApi(json(200, report));
+
+    const { data } = await api.client().GET("/v1/cost-reports/{costReportId}/data", {
+      params: { path: { costReportId: "rpt_1" }, query: { workspaceId: "ws_1" } },
+    });
+
+    assert.deepEqual(
+      [data?.resourceNames, data?.accountNames, data?.clusterNames],
+      [{ "i-0abc": "checkout-api" }, { "222222222222": "prod-payments" }, { "c-prod-eu": "Production EU" }],
+    );
+  });
+});
+
 describe("the package", () => {
   it("names the document it was generated from", () => {
     assert.match(CONTRACT_SHA256, /^[0-9a-f]{64}$/);
+  });
+
+  // The Go SDK's idempotency test holds the same floor; a shorter list means creates the client
+  // would retry without a key, duplicating what a lost response already created.
+  it("keys every create at least as widely as the Go SDK's floor", () => {
+    assert.ok(IDEMPOTENT_CREATES.size >= 18, `${IDEMPOTENT_CREATES.size} creates take an Idempotency-Key`);
   });
 
   it("reports the version package.json carries, which the release stamps into both", async () => {

@@ -608,6 +608,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/savings-items/{savingsItemId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept savings finding
+         * @description Records that the workspace will act on an open finding, which moves it to accepted. Changes nothing in the cloud.
+         *
+         *     Needs a token with `respondToSavingsItem` on the workspace.
+         */
+        post: operations["AcceptSavingsItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/savings-items/{savingsItemId}/owner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Assign savings finding owner
+         * @description Names who carries a finding, as free text. Any finding not rejected or withdrawn takes an owner, a provider's or a curated one included, and a provider's daily refresh keeps it. Changes nothing in the cloud.
+         *
+         *     Needs a token with `manageSavingsItems` on the workspace.
+         */
+        put: operations["AssignSavingsItemOwner"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/savings-items/{savingsItemId}": {
         parameters: {
             query?: never;
@@ -630,6 +674,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/savings-items/{savingsItemId}/implement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark savings finding implemented
+         * @description Records that the change an accepted finding recommends was made, which moves it to implemented. Changes nothing in the cloud.
+         *
+         *     Needs a token with `respondToSavingsItem` on the workspace.
+         */
+        post: operations["ImplementSavingsItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/savings-items": {
         parameters: {
             query?: never;
@@ -639,13 +705,35 @@ export interface paths {
         };
         /**
          * List savings findings
-         * @description Returns the workspace's savings queue: one tab's findings, or every status without one, narrowed by source, kind, the connection that generated them and a minimum monthly saving, newest first or largest saving first. Costfluent's curated findings are listed only on a plan that includes them. An unknown cloudAccountId matches no finding.
+         * @description Returns the workspace's savings queue: one tab's findings, or every status without one, narrowed by source, kind, the connection that generated them, the resources of a cost estimate and a minimum monthly saving, newest first or largest saving first. Costfluent's curated findings are listed only on a plan that includes them. costEstimateId lists the findings whose resource equals, ignoring case, an id on one of that estimate's resources. An unknown cloudAccountId or costEstimateId, or another workspace's estimate, matches no finding.
          *
          *     Needs a token with `viewSavingsItems` on the workspace.
          */
         get: operations["ListSavingsItems"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/savings-items/{savingsItemId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject savings finding
+         * @description Declines an open or accepted finding with the reason the workspace gives, which moves it to rejected. Changes nothing in the cloud.
+         *
+         *     Needs a token with `respondToSavingsItem` on the workspace.
+         */
+        post: operations["RejectSavingsItem"];
         delete?: never;
         options?: never;
         head?: never;
@@ -820,6 +908,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/providers/{providerId}/collection-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get provider collection status
+         * @description Returns one cost source's status with its months, newest first, back to the plan's history horizon: each month's rows, billed amount per currency, the latest restatement and the comparison with the provider's own total, and the days (or months) no committed collection covered. Missing means nothing was collected, not that the provider had no cost. Amounts are null, with amountsWithheldReason set, unless the token manages providers or reads the whole connection's cost; a source without a provider total says so in providerTotal.status rather than showing 0.
+         *
+         *     Needs an organization token with `viewProviders`.
+         */
+        get: operations["GetProviderCollectionStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/providers/{providerId}/sync-history": {
         parameters: {
             query?: never;
@@ -834,6 +944,28 @@ export interface paths {
          *     Needs an organization token with `viewProviders`.
          */
         get: operations["GetProviderSyncHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/providers/collection-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List collection status
+         * @description Returns every cost source of the organization, by name, with how its cost arrives (cadence), when it last imported, the day its data covers through, when its next delivery is due and whether it is late. Late is when the stale-data notice goes out. A source delivered on upload, or a connection that is not collecting, has no next delivery. Kubernetes clusters are not listed.
+         *
+         *     Needs an organization token with `viewProviders`.
+         */
+        get: operations["ListCollectionStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1295,7 +1427,7 @@ export interface paths {
         };
         /**
          * List uploads
-         * @description Returns a custom provider's uploads, newest first, each with the days it covers and what it billed.
+         * @description Returns a custom provider's uploads, newest first, each with the days it covers and what it billed. billedTotals is null unless the token has manageProviders, or viewCosts in workspaces that together read the whole connection.
          *
          *     Needs an organization token with `viewProviders`.
          */
@@ -1303,7 +1435,7 @@ export interface paths {
         put?: never;
         /**
          * Upload cost files
-         * @description Uploads one run of a FOCUS cost export to a custom provider: every file of the run in a repeated multipart field `file`, each .csv or .csv.gz with the same header, up to 90 MB together. The upload is accepted as pending and processed in the background; if any row is invalid nothing is committed and the upload fails with its errors. A completed upload replaces the provider's cost for every day from its first charge to its last. Its rows count toward the organization's monthly volume, one row for each day a cost is spread over, and the upload is checked whole before any day is committed: one that would pass a monthly volume limit set for the organization, or is processed while ingestion is paused, fails and commits nothing.
+         * @description Uploads one run of a FOCUS cost export to a custom provider: every file of the run in a repeated multipart field `file`, each .csv or .csv.gz with the same header, up to 90 MB together. The upload is accepted as pending and processed in the background; if any row is invalid nothing is committed and the upload fails with its errors. A completed upload replaces the provider's cost for every day from its first charge to its last. Its rows count toward the organization's monthly volume, one row for each day a cost is spread over, and the upload is checked whole before any day is committed: one that would pass a monthly volume limit set for the organization, or is processed while ingestion is paused, fails and commits nothing. An organization has at most 5 uploads waiting or being processed at once, one deleted before it finished counting for 5 minutes after the delete; a further upload, or one sent once its custom connections have committed the day's cost records or bytes, is refused with 429 and nothing is stored.
          *
          *     Needs an organization token with `manageProviders`.
          */
@@ -1323,7 +1455,7 @@ export interface paths {
         };
         /**
          * Get upload
-         * @description Returns one upload with its status and, when it failed, the first errors of its report.
+         * @description Returns one upload with its status and, when it failed, the first errors of its report. billedTotals is null unless the token has manageProviders, or viewCosts in workspaces that together read the whole connection.
          *
          *     Needs an organization token with `viewProviders`.
          */
@@ -1353,7 +1485,7 @@ export interface paths {
         put?: never;
         /**
          * Submit costs batch
-         * @description Submits a batch of cost records to a custom provider. A batch that another submission or upload for the same provider overtook while it ran answers 409 concurrency_conflict and commits nothing; send it again. Submitted costs count toward the organization's monthly volume, one row for each day a cost is spread over, and the batch is checked whole: one that would pass a monthly volume limit set for the organization commits nothing. Each entry becomes one daily record per day of its charge period; a request may become at most 37,500 records and, counting a spread entry once per day, 48 MiB of entries, and is refused with 400 otherwise.
+         * @description Submits a batch of cost records to a custom provider. A batch that another submission or upload for the same provider overtook while it ran answers 409 concurrency_conflict and commits nothing; send it again. Submitted costs count toward the organization's monthly volume, one row for each day a cost is spread over, and the batch is checked whole: one that would pass a monthly volume limit set for the organization commits nothing. Each entry becomes one daily record per day of its charge period; a request may become at most 7,500 records and, counting a spread entry once per day, 10,000,000 bytes of entries, and is refused with 400 otherwise.
          *
          *     Needs an organization token with `syncProviders` for every request, and `manageProviders` as well when it replaces lines (replaceLines: true), which removes their earlier days.
          */
@@ -1543,7 +1675,7 @@ export interface paths {
          * Get cost report data
          * @description Returns the computed cost data for a report. A breakdown row's `percent` is its share of the window's total cost; with conversion off over several currencies, of the total in its own currency.
          *
-         *     Needs a token with `viewCosts` on the workspace.
+         *     Needs a token with `viewCosts` on the workspace for every report, and `viewCostReports` too for a report that charts a business metric.
          */
         get: operations["GetCostReportData"];
         put?: never;
@@ -2091,7 +2223,7 @@ export interface paths {
         };
         /**
          * Get the account's metered usage
-         * @description The same numbers the caps are enforced against, so a script can check headroom rather than discover a limit by being refused.
+         * @description The same numbers the caps are enforced against, so a script can check headroom rather than discover a limit by being refused. `trackedSpend`, `averageTrackedSpend` and each history month's `trackedSpend` are null unless the token reads costs across the whole organization: an organization token issued `viewCosts` by a current Owner, or one the organization owns. The counters, the currency and the band stay readable to every token. A null `averageTrackedSpend` beside a non-null `trackedSpend` means the average is not measured yet.
          *
          *     Needs an organization token with `viewOrganization`.
          */
@@ -2703,6 +2835,7 @@ export interface components {
             tokenName: string;
             clusterId?: string | null;
             capabilities: components["schemas"]["ApiTokenCapability"][];
+            agentWritesAllowed: boolean;
         };
         OrganizationPublicId: string;
         ApiTokenType: string;
@@ -2901,6 +3034,8 @@ export interface components {
             /** Format: decimal */
             minimumMonthlySaving?: string | null;
         };
+        SavingsItemActionRequest: Record<string, never>;
+        SavingsItemPublicId: string;
         SavingsItemResponse: {
             id: components["schemas"]["SavingsItemPublicId"];
             title: string;
@@ -2942,18 +3077,24 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string | null;
         };
-        SavingsItemPublicId: string;
         SavingsItemRating: string;
         SavingsItemStatus: string;
         SavingsVerificationOutcome: string;
+        AssignSavingsItemOwnerRequest: {
+            owner: string;
+        };
         GetSavingsItemRequest: Record<string, never>;
         PaginatedResponseOfSavingsItemResponse: {
             links: components["schemas"]["PaginationLinks"];
             data: components["schemas"]["SavingsItemResponse"][];
         };
         ListSavingsItemsRequest: components["schemas"]["PaginatedRequest"] & Record<string, never>;
+        CostEstimatePublicId: string;
         /** @enum {string} */
         SavingsQueueSort: "newest" | "largestSaving";
+        RejectSavingsItemRequest: {
+            reason: string;
+        };
         SavedFilterCreatedResponse: {
             id: components["schemas"]["SavedFilterPublicId"];
             title: string;
@@ -3029,6 +3170,91 @@ export interface components {
             templateUrl?: string | null;
             region: string;
         };
+        CollectionStatusResponse: {
+            summary: components["schemas"]["CollectionStatusSummaryResponse"];
+            amountsWithheldReason?: string | null;
+            months: components["schemas"]["CollectionMonthResponse"][];
+            missing: components["schemas"]["MissingRangeResponse"][];
+        };
+        CollectionStatusSummaryResponse: {
+            providerId: components["schemas"]["ProviderPublicId"];
+            name: string;
+            key: components["schemas"]["ProviderKey"];
+            status: components["schemas"]["ProviderStatus"];
+            cadence: components["schemas"]["DeliveryCadence"];
+            period: components["schemas"]["DeliveryPeriod"];
+            hasProviderTotal: boolean;
+            /** Format: date-time */
+            lastImportedAt?: string | null;
+            /** Format: date */
+            dataThrough?: string | null;
+            nextDelivery?: components["schemas"]["NextDeliveryResponse"] | null;
+            /** Format: int32 */
+            daysOverdue?: number | null;
+            isLate: boolean;
+            awaitingFirstImport: boolean;
+            lastSyncStatus?: string | null;
+        };
+        ProviderStatus: string;
+        DeliveryCadence: string;
+        DeliveryPeriod: string;
+        NextDeliveryResponse: {
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            /** Format: date */
+            dueOn: string;
+        };
+        CollectionMonthResponse: {
+            /** Format: date */
+            month: string;
+            isImported: boolean;
+            /** Format: int64 */
+            recordCount: number;
+            /** Format: date-time */
+            lastImportedAt?: string | null;
+            onRequest: boolean;
+            restatement?: components["schemas"]["RestatementResponse"] | null;
+            amounts?: components["schemas"]["MonthAmountResponse"][] | null;
+            providerTotal: components["schemas"]["ProviderTotalResponse"];
+        };
+        RestatementResponse: {
+            /** Format: date-time */
+            lastCommittedAt: string;
+            /** Format: int64 */
+            records: number;
+        };
+        MonthAmountResponse: {
+            currency: string;
+            /** Format: decimal */
+            amount: string;
+        };
+        ProviderTotalResponse: {
+            status: components["schemas"]["ProviderTotalStatus"];
+            reason?: string | null;
+            /** Format: decimal */
+            providerAmount?: string | null;
+            /** Format: decimal */
+            costfluentAmount?: string | null;
+            /** Format: decimal */
+            difference?: string | null;
+            /** Format: decimal */
+            tolerance?: string | null;
+            currency?: string | null;
+            /** Format: date-time */
+            comparedAt?: string | null;
+        };
+        ProviderTotalStatus: string;
+        MissingRangeResponse: {
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            /** Format: int32 */
+            scopes: number;
+        };
+        GetProviderCollectionStatusRequest: Record<string, never>;
         ProviderResponse: {
             id: components["schemas"]["ProviderPublicId"];
             type: components["schemas"]["ProviderType"];
@@ -3051,7 +3277,6 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string | null;
         };
-        ProviderStatus: string;
         GetProviderRequest: Record<string, never>;
         PaginatedResponseOfSyncHistoryEntryResponse: {
             links: components["schemas"]["PaginationLinks"];
@@ -3070,6 +3295,11 @@ export interface components {
             errorMessage?: string | null;
         };
         GetProviderSyncHistoryRequest: components["schemas"]["PaginatedRequest"] & Record<string, never>;
+        PaginatedResponseOfCollectionStatusSummaryResponse: {
+            links: components["schemas"]["PaginationLinks"];
+            data: components["schemas"]["CollectionStatusSummaryResponse"][];
+        };
+        ListCollectionStatusRequest: components["schemas"]["PaginatedRequest"] & Record<string, never>;
         PaginatedResponseOfProviderResponse: {
             links: components["schemas"]["PaginationLinks"];
             data: components["schemas"]["ProviderResponse"][];
@@ -3166,6 +3396,9 @@ export interface components {
             window_start?: string;
             /** Format: date-time */
             window_end?: string;
+            unscraped_nodes?: {
+                [key: string]: number;
+            } | null;
             nodes?: components["schemas"]["KubernetesReportNode"][];
             pods?: components["schemas"]["KubernetesReportPod"][];
             volumes?: components["schemas"]["KubernetesReportVolume"][] | null;
@@ -3618,6 +3851,7 @@ export interface components {
             startDate?: string | null;
             /** Format: date */
             endDate?: string | null;
+            /** @default stackedBar */
             chartType?: components["schemas"]["ChartType"];
             chartAxis?: components["schemas"]["ChartAxis"] | null;
             dateBin?: components["schemas"]["DateBin"] | null;
@@ -3650,6 +3884,7 @@ export interface components {
             unitCostCalculation?: components["schemas"]["UnitCostCalculation"] | null;
             /** Format: int32 */
             unitCostScale?: number | null;
+            comparisonMode?: components["schemas"]["ComparisonMode"] | null;
         };
         CostMeasure: string;
         BusinessMetricPublicId: string;
@@ -3658,6 +3893,7 @@ export interface components {
             values: string[];
         };
         UnitCostCalculation: string;
+        ComparisonMode: string;
         DeleteCostReportRequest: Record<string, never>;
         CostReportDataResponse: {
             summary: components["schemas"]["ReportSummaryResponse"];
@@ -3670,10 +3906,21 @@ export interface components {
             /** Format: date */
             historyFloor?: string | null;
             comparison?: components["schemas"]["ReportComparisonResponse"] | null;
+            /** Format: date */
+            comparisonHistoryFloor?: string | null;
             forecast?: components["schemas"]["ReportForecastResponse"] | null;
             /** Format: date */
             dataThrough?: string | null;
             unitCost?: components["schemas"]["ReportUnitCostResponse"] | null;
+            resourceNames?: {
+                [key: string]: string;
+            } | null;
+            accountNames?: {
+                [key: string]: string;
+            } | null;
+            clusterNames?: {
+                [key: string]: string;
+            } | null;
         };
         ReportSummaryResponse: {
             /** Format: decimal */
@@ -3741,6 +3988,8 @@ export interface components {
             comparedCost?: string | null;
             /** Format: double */
             changePercent?: number | null;
+            /** Format: double */
+            unitPrice?: number | null;
         };
         ReportComparisonResponse: {
             /** Format: date */
@@ -3748,6 +3997,7 @@ export interface components {
             /** Format: date */
             endDate: string;
             series: components["schemas"]["ReportComparisonPointResponse"][];
+            samePeriodLastYear: boolean;
         };
         ReportComparisonPointResponse: {
             /** Format: date */
@@ -3835,6 +4085,7 @@ export interface components {
             unitCostCalculation: components["schemas"]["UnitCostCalculation"];
             /** Format: int32 */
             unitCostScale: number;
+            comparisonMode: components["schemas"]["ComparisonMode"];
         };
         UnitCostLabelConditionResponse: {
             key: string;
@@ -3875,9 +4126,19 @@ export interface components {
             state: components["schemas"]["CostEstimateState"];
             /** Format: date */
             appliedOn?: string | null;
+            planned?: components["schemas"]["CostEstimatePlannedResponse"] | null;
         };
-        CostEstimatePublicId: string;
         CostEstimateState: string;
+        CostEstimatePlannedResponse: {
+            /** Format: decimal */
+            monthlyCostBefore: string;
+            /** Format: decimal */
+            monthlyCostAfter: string;
+            /** Format: decimal */
+            monthlyChange: string;
+            /** Format: int32 */
+            unpricedResources: number;
+        };
         ApplyCostEstimateRequest: {
             workspaceId: components["schemas"]["WorkspacePublicId"];
             repository?: string | null;
@@ -3924,16 +4185,6 @@ export interface components {
             value: string;
         };
         CostEstimateOutcome: string;
-        CostEstimatePlannedResponse: {
-            /** Format: decimal */
-            monthlyCostBefore: string;
-            /** Format: decimal */
-            monthlyCostAfter: string;
-            /** Format: decimal */
-            monthlyChange: string;
-            /** Format: int32 */
-            unpricedResources: number;
-        };
         CostEstimateActualResponse: {
             /** Format: decimal */
             monthlyCostBefore: string;
@@ -4106,6 +4357,7 @@ export interface components {
             providerId: components["schemas"]["ProviderPublicId"];
             providerName: string;
             providerKey: components["schemas"]["ProviderKey"];
+            currency?: string | null;
             /** Format: decimal */
             cost: string;
         };
@@ -4505,6 +4757,7 @@ export interface components {
             overriddenLimits: string[];
             ingestionHalted: boolean;
             ingestionHaltedReason: string;
+            ingestionHaltCause?: components["schemas"]["IngestionHaltCause"] | null;
             bandPlanCode?: string | null;
             /** Format: date */
             currentPeriodStart: string;
@@ -4512,6 +4765,7 @@ export interface components {
             currentPeriodEnd: string;
             ladder: components["schemas"]["PlanLadderEntryResponse"][];
         };
+        IngestionHaltCause: string;
         PlanLadderEntryResponse: {
             code: string;
             name: string;
@@ -4533,8 +4787,6 @@ export interface components {
             /** Format: date */
             periodStart: string;
             currency: string;
-            /** Format: decimal */
-            trackedSpend: string;
             isSpendComplete: boolean;
             unconvertedCurrencies: string[];
             /** Format: int64 */
@@ -4551,16 +4803,18 @@ export interface components {
             averageTrackedSpend?: string | null;
             bandPlanCode?: string | null;
             history: components["schemas"]["UsageHistoryEntryResponse"][];
+            /** Format: decimal */
+            trackedSpend: string | null;
         };
         UsageHistoryEntryResponse: {
             /** Format: date */
             periodStart: string;
-            /** Format: decimal */
-            trackedSpend: string;
             /** Format: int64 */
             rowsIngested: number;
             /** Format: int64 */
             bytesStored: number;
+            /** Format: decimal */
+            trackedSpend: string | null;
         };
         PaginatedResponseOfAuditLogEntryResponse: {
             links: components["schemas"]["PaginationLinks"];
@@ -8664,6 +8918,202 @@ export interface operations {
             503: components["responses"]["ServiceUnavailable"];
         };
     };
+    AcceptSavingsItem: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+            };
+            header?: never;
+            path: {
+                savingsItemId: components["schemas"]["SavingsItemPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description workspaceId is missing */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description the finding is not open (conflict); nothing was changed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    AssignSavingsItemOwner: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+            };
+            header?: never;
+            path: {
+                savingsItemId: components["schemas"]["SavingsItemPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignSavingsItemOwnerRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavingsItemResponse"];
+                };
+            };
+            /** @description owner is missing, empty or longer than 200 characters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body arrived too slowly and the server stopped reading it; send it again */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description the finding is rejected or withdrawn (conflict); nothing was changed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body is larger than this operation accepts */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
     GetSavingsItem: {
         parameters: {
             query: {
@@ -8743,6 +9193,92 @@ export interface operations {
             503: components["responses"]["ServiceUnavailable"];
         };
     };
+    ImplementSavingsItem: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+            };
+            header?: never;
+            path: {
+                savingsItemId: components["schemas"]["SavingsItemPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description workspaceId is missing */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description the finding is not accepted (conflict); nothing was changed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
     ListSavingsItems: {
         parameters: {
             query: {
@@ -8751,6 +9287,7 @@ export interface operations {
                 source?: components["schemas"]["SavingsItemSource"] | null;
                 kind?: components["schemas"]["SavingsItemKind"] | null;
                 cloudAccountId?: components["schemas"]["ProviderPublicId"] | null;
+                costEstimateId?: components["schemas"]["CostEstimatePublicId"] | null;
                 minimumMonthlySaving?: string | null;
                 sort?: components["schemas"]["SavingsQueueSort"];
                 /** @description The page to return, counted from 1. A page below 1 reads page 1; one past the last returns no items. */
@@ -8802,6 +9339,114 @@ export interface operations {
             };
             /** @description The resource does not exist or is not visible to this token */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    RejectSavingsItem: {
+        parameters: {
+            query: {
+                workspaceId: components["schemas"]["WorkspacePublicId"];
+            };
+            header?: never;
+            path: {
+                savingsItemId: components["schemas"]["SavingsItemPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectSavingsItemRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description workspaceId is missing, or reason is missing, empty or longer than 1000 characters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body arrived too slowly and the server stopped reading it; send it again */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description the finding is implemented, verified, rejected or withdrawn (conflict); nothing was changed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The request body is larger than this operation accepts */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9942,6 +10587,74 @@ export interface operations {
             503: components["responses"]["ServiceUnavailable"];
         };
     };
+    GetProviderCollectionStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                providerId: components["schemas"]["ProviderPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionStatusResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
     GetProviderSyncHistory: {
         parameters: {
             query?: {
@@ -9965,6 +10678,86 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedResponseOfSyncHistoryEntryResponse"];
+                };
+            };
+            /** @description A query value cannot be read, or page × limit passes the furthest a list reaches (validation_failed; errors[0] names the value) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The API token lacks the operation's capability (missing_capability; errors[0] names it), is a workspace token naming another workspace or an organization-level operation, or belongs to an organization whose plan does not include API tokens (plan_upgrade_required; errors[0] names the plan that does) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The resource does not exist or is not visible to this token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            429: {
+                headers: {
+                    /** @description Requests the limit that refused this one allows in its window */
+                    "RateLimit-Limit"?: number;
+                    /** @description Requests left in the window: 0 on a refusal */
+                    "RateLimit-Remaining"?: number;
+                    /** @description Seconds until the window frees a request */
+                    "RateLimit-Reset"?: number;
+                    /** @description Seconds to wait before retrying, the same as RateLimit-Reset */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    ListCollectionStatus: {
+        parameters: {
+            query?: {
+                /** @description The page to return, counted from 1. A page below 1 reads page 1; one past the last returns no items. */
+                page?: number;
+                /** @description Items per page, from 1 to 100. A larger value is clamped to 100, a smaller one to 1. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponseOfCollectionStatusSummaryResponse"];
                 };
             };
             /** @description A query value cannot be read, or page × limit passes the furthest a list reaches (validation_failed; errors[0] names the value) */
@@ -12716,7 +13509,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description Too many requests; retry after the Retry-After header, or the RateLimit-Reset header that carries the same seconds */
+            /** @description Nothing was stored: the token's request budget is spent, the organization already has 5 uploads waiting or being processed (retry once one finishes), or its custom connections have committed the day's cost records or bytes (retry after midnight UTC); retry after the Retry-After header */
             429: {
                 headers: {
                     /** @description Requests the limit that refused this one allows in its window */
