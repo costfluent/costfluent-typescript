@@ -10,10 +10,18 @@ const getFolder = (api: FakeApi) =>
   api.client().GET("/v1/folders/{folderId}", { params: { path: { folderId: "fld_1" }, query: { workspaceId: "ws_1" } } });
 const acknowledge = (api: FakeApi) =>
   api.client().POST("/v1/anomalies/{anomalyId}/acknowledge", { params: { path: { anomalyId: "anm_1" } } });
+const removeMember = (api: FakeApi) =>
+  api.client().DELETE("/v1/teams/{teamId}/members/{userId}", { params: { path: { teamId: "team_1", userId: "usr_1" } } });
 const caught = (call: Promise<unknown>) => call.then(() => undefined, (error: unknown) => error);
+// A real fetch holds its socket open while it waits; the ref'd timer stands in for it. Without one,
+// Node 20.3 to 20.12 drain the event loop before the client's unref'd timeout fires and cancel the test.
 const hang = (_request: Request, init?: RequestInit) =>
   new Promise<Response>((_resolve, reject) => {
-    init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+    const socket = setInterval(() => undefined, 60_000);
+    init?.signal?.addEventListener("abort", () => {
+      clearInterval(socket);
+      reject(init.signal?.reason);
+    });
   });
 
 describe("retries", () => {
@@ -147,6 +155,64 @@ describe("retries", () => {
 
     await caught(getFolder(api));
 
+    assert.equal(api.requests.length, 1);
+  });
+
+  it("do not resend the API's 404 whatever its code, and read only not_found as missing", async () => {
+    const folder = { params: { path: { folderId: "fld_1" }, query: { workspaceId: "ws_1" } } };
+    const calls = {
+      GET: (api: FakeApi) => api.client().GET("/v1/folders/{folderId}", folder),
+      PUT: (api: FakeApi) =>
+        api.client().PUT("/v1/folders/{folderId}", {
+          params: { path: { folderId: "fld_1" } },
+          body: { workspaceId: "ws_1", title: "Finance" },
+        }),
+      DELETE: (api: FakeApi) => api.client().DELETE("/v1/folders/{folderId}", folder),
+    };
+    for (const [method, call] of Object.entries(calls)) {
+      // The API's 404 for something other than a missing object, such as a path it does not serve.
+      const api = new FakeApi(problem(404, "operation_not_found"));
+
+      const error = await caught(call(api));
+
+      assert.deepEqual(api.requests.map((request) => request.method), [method]);
+      assert.ok(error instanceof CostfluentError, `${method}: ${String(error)}`);
+      assert.equal(error.code, "operation_not_found", method);
+      assert.equal(error.isNotFound, false, method);
+    }
+  });
+
+  it("report not found when a resent DELETE finds the object already gone", async () => {
+    const failures = { "a 503": unavailable, "a lost connection": () => new TypeError("fetch failed") };
+    for (const [first, failure] of Object.entries(failures)) {
+      const api = new FakeApi(failure(), problem(404, "not_found"));
+
+      const error = await caught(removeMember(api));
+
+      assert.ok(error instanceof CostfluentError && error.isNotFound, `${first}: ${String(error)}`);
+      assert.equal(api.requests.length, 2, first);
+    }
+  });
+
+  it("do not resend a DELETE the API answered not found", async () => {
+    const api = new FakeApi(problem(404, "not_found"), new Response(null, { status: 204 }));
+
+    const error = await caught(removeMember(api));
+
+    assert.ok(error instanceof CostfluentError && error.isNotFound, String(error));
+    assert.equal(api.requests.length, 1);
+  });
+
+  it("do not resend a conditional DELETE", async () => {
+    const api = new FakeApi(unavailable(), new Response(null, { status: 204 }));
+
+    const error = await caught(
+      api.client().DELETE("/v1/folders/{folderId}", {
+        params: { path: { folderId: "fld_1" }, query: { workspaceId: "ws_1" }, header: { "If-Match": '"7"' } },
+      }),
+    );
+
+    assert.ok(error instanceof CostfluentError && error.status === 503, String(error));
     assert.equal(api.requests.length, 1);
   });
 

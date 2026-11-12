@@ -13,6 +13,7 @@ export type CostfluentClient = Client<paths>;
 export interface ClientOptions {
   /** The API token, sent as a bearer token. */
   token: string;
+  /** https, or plain http to localhost, 127.0.0.1 or ::1 only; any other throws a `TypeError`. */
   baseUrl?: string;
   /** Milliseconds each attempt may take, 30 seconds unless set. */
   timeoutMs?: number;
@@ -53,12 +54,37 @@ export function createClient(options: ClientOptions): CostfluentClient {
   });
 }
 
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/**
+ * Refuses a base URL that would send the token in clear: the Go client's rule, which the Terraform
+ * provider and the MCP server apply to the same setting.
+ */
+function checkBaseUrl(baseUrl: string): void {
+  let url: URL;
+  try {
+    url = new URL(baseUrl);
+  } catch (cause) {
+    throw new TypeError(`costfluent: base URL ${JSON.stringify(baseUrl)} is not a URL; write it as https://<host>`, {
+      cause,
+    });
+  }
+  if (url.protocol === "https:" || (url.protocol === "http:" && LOOPBACK_HOSTS.has(url.hostname))) {
+    return;
+  }
+  throw new TypeError(
+    `costfluent: base URL ${JSON.stringify(baseUrl)} must use https, because the API key travels with every request; plain http is allowed only for localhost, 127.0.0.1 and ::1`,
+  );
+}
+
 /** `createClient` with its sleep and clock replaced, for the tests. */
 export function buildClient(options: ClientOptions, seams: Pick<RetryOptions, "sleep" | "now">): CostfluentClient {
+  const baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
+  checkBaseUrl(baseUrl);
   // Called through a wrapper: a browser's fetch throws when called detached from the window.
   const inner: Fetch = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
   const client = createOpenApiClient<paths>({
-    baseUrl: (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, ""),
+    baseUrl: baseUrl.replace(/\/+$/, ""),
     headers: {
       Authorization: `Bearer ${options.token}`,
       "User-Agent": `costfluent-typescript/${VERSION}`,

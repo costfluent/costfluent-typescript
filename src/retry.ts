@@ -22,6 +22,9 @@ export const MAX_RETRY_WAIT_MS = 60_000;
  * Whether a request is safe to resend after a lost response or a 5xx. A POST triggers, so
  * resending one the server may have run could run it twice unless it carries an Idempotency-Key,
  * and a request with If-Match the server applied would be refused by its own now stale precondition.
+ * An unconditional DELETE is resent, and when the first attempt removed the object before its
+ * answer was lost, the resend's not-found is reported as the API answered it: a success made up
+ * here would also be reported for an id that never existed or that the token cannot see.
  */
 function retryable(request: Request): boolean {
   if (request.headers.has("If-Match")) {

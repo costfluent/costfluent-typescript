@@ -2,7 +2,7 @@
 
 TypeScript client for the [Costfluent](https://costfluent.com) Public API: every operation typed
 from the API's OpenAPI document, with retries, idempotency keys, pagination and errors handled for
-you. It runs wherever `fetch` does: Node.js 20 or later, Deno, Bun and edge runtimes.
+you. It runs wherever `fetch` does: Node.js 20.3 or later, Deno, Bun and edge runtimes.
 
 ```bash
 npm install @costfluent/sdk
@@ -30,6 +30,8 @@ await client.POST("/v1/folders", { body: { workspaceId: "wsp_...", title: "Finan
 Operations are addressed by method and path, with the path, query and body typed from the API, as
 [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) does. `createClient` takes `token`,
 `baseUrl`, `timeoutMs` (each attempt, 30 seconds unless set), `maxRetries` and `fetch`. The
+token travels with every request, so `baseUrl` must use `https://`; plain `http://` is accepted
+only for `localhost`, `127.0.0.1` and `::1`, and any other throws a `TypeError`. The
 schema types are exported as `paths`, `components` and `operations`, so
 `components["schemas"]["WorkspaceResponse"]` names a model.
 
@@ -68,6 +70,10 @@ for the common checks.
 - A 5xx, a connection error, or a 404 that is not the API's own problem details (a proxy's) is
   retried for GET, HEAD, PUT, DELETE and creates, but not for other POSTs, which trigger work, nor
   for a request with `If-Match`.
+- A DELETE without `If-Match` is resent too: when its first attempt removed the object and only the
+  answer was lost, the resend answers not found. After a delete, `isNotFound` means no such object
+  is visible to the token: it was removed, by an earlier attempt or anyone else, or the id is wrong
+  or out of the token's reach. Treat it as done only when the id came from this token's own read.
 - Retries back off exponentially from one second with jitter, at most three times. A wait over 60
   seconds is not waited out: the error is thrown at once. An attempt that times out is not retried.
 

@@ -87,7 +87,11 @@ describe("against the API", { skip: !(baseUrl && token) && "COSTFLUENT_SMOKE_BAS
     });
     assert.deepEqual([submitted?.acceptedRows, submitted?.rejectedRows], [1, 0]);
 
-    const { data: costs } = await client.GET("/v1/costs", { params: { query: { startDate: costDay, endDate: costDay } } });
+    // Scoped to this provider: the token reads the whole organization, whose seeded connections carry
+    // costs of their own on costDay.
+    const { data: costs } = await client.GET("/v1/costs", {
+      params: { query: { startDate: costDay, endDate: costDay, cloudAccountIds: [provider.id] } },
+    });
 
     const amounts = costs?.data.map((row) => row.cost) ?? [];
     assert.ok(amounts.length > 0 && amounts.every((value) => typeof value === "string"), String(amounts));
@@ -102,6 +106,22 @@ describe("against the API", { skip: !(baseUrl && token) && "COSTFLUENT_SMOKE_BAS
     const error = await client
       .GET("/v1/folders/{folderId}", { params: { path: { folderId: "fld_AAAAAAAAAAAAAAAAAAAAAA" }, query: { workspaceId } } })
       .catch((caught: unknown) => caught);
+
+    assert.ok(error instanceof CostfluentError && error.isNotFound, String(error));
+    assert.equal(error.code, "not_found");
+  });
+
+  it("throws the typed not-found error for a folder deleted twice", async () => {
+    // The answer a resent DELETE meets when its first attempt removed the object. A title of its
+    // own, because the create-once case counts the folders titled with the run's name.
+    const workspaceId = (await firstWorkspace()).id;
+    const { data: created } = await client.POST("/v1/folders", { body: { workspaceId, title: `${name} delete` } });
+    assert.ok(created);
+    const remove = () =>
+      client.DELETE("/v1/folders/{folderId}", { params: { path: { folderId: created.id }, query: { workspaceId } } });
+    await remove();
+
+    const error = await remove().catch((caught: unknown) => caught);
 
     assert.ok(error instanceof CostfluentError && error.isNotFound, String(error));
     assert.equal(error.code, "not_found");
