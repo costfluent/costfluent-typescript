@@ -74,8 +74,13 @@ for the common checks.
   answer was lost, the resend answers not found. After a delete, `isNotFound` means no such object
   is visible to the token: it was removed, by an earlier attempt or anyone else, or the id is wrong
   or out of the token's reach. Treat it as done only when the id came from this token's own read.
-- Retries back off exponentially from one second with jitter, at most three times. A wait over 60
-  seconds is not waited out: the error is thrown at once. An attempt that times out is not retried.
+- A 429 is waited out as often as the API asks while the waits stay within 60 seconds in all, each
+  counted as at least a second; the next wait that would pass them throws the error at once, and so
+  does a single wait over 60 seconds, which means the token's hourly quota is spent. Aborting the
+  call's `signal` ends a wait at once.
+- Other retries back off exponentially from one second with jitter, at most three times, or
+  `maxRetries`; `maxRetries: 0` turns every retry off, rate limits included. An attempt that times
+  out is not retried.
 
 Every create sends a fresh `Idempotency-Key` and resends it on each retry, so a retried create is
 answered with the first response instead of creating twice. Set
