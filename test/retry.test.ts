@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
+import { getEventListeners } from "node:events";
 import { describe, it } from "node:test";
 
-import { CostfluentError } from "../src/index.ts";
+import { buildClient, sleepUnlessAborted } from "../src/client.ts";
+import { CostfluentError, createClient } from "../src/index.ts";
 import { FakeApi, json, problem } from "./fake-api.ts";
 
 const folderRead = () => json(200, { id: "fld_1", title: "Finance", reportCount: 0 });
 const unavailable = () => problem(503, "service_unavailable");
+const rateLimited = (retryAfter: string) => problem(429, "rate_limited", {}, { "Retry-After": retryAfter });
 const getFolder = (api: FakeApi) =>
   api.client().GET("/v1/folders/{folderId}", { params: { path: { folderId: "fld_1" }, query: { workspaceId: "ws_1" } } });
 const acknowledge = (api: FakeApi) =>
@@ -101,6 +104,22 @@ describe("retries", () => {
     assert.equal(api.requests.length, 2);
     assert.equal(keys.size, 1);
     assert.equal(await api.requests[1]?.text(), JSON.stringify({ workspaceId: "ws_1", title: "Finance" }));
+  });
+
+  it("resend a create under a path template under the same key", async () => {
+    const submitted = { batchId: "ccb_1", totalRows: 1, acceptedRows: 1, rejectedRows: 0 };
+    const api = new FakeApi(unavailable(), json(200, submitted));
+
+    const { data } = await api.client().POST("/v1/custom-providers/{providerId}/costs", {
+      params: { path: { providerId: "cpr_1" } },
+      body: { costs: [{ chargePeriodStart: "2026-11-01", chargeCategory: "Usage", serviceName: "Support", billedCost: "12.50" }] },
+    });
+
+    const keys = new Set(api.requests.map((request) => request.headers.get("Idempotency-Key")));
+    assert.equal(api.requests.length, 2);
+    assert.equal(keys.size, 1);
+    assert.match([...keys][0] ?? "", /^[0-9a-f-]{36}$/);
+    assert.deepEqual(data, submitted);
   });
 
   it("do not resend a conditional write", async () => {
@@ -310,5 +329,203 @@ describe("retries", () => {
 
     assert.ok(error instanceof DOMException && error.name === "AbortError", String(error));
     assert.equal(api.requests.length, 1);
+  });
+
+  it("wait out nine short rate limits", async () => {
+    const api = new FakeApi(...Array.from({ length: 9 }, () => rateLimited("1")), folderRead());
+
+    await getFolder(api);
+
+    assert.equal(api.requests.length, 10);
+    assert.deepEqual(api.sleeps, Array.from({ length: 9 }, () => 1_000));
+  });
+
+  it("get every one of ten calls contending for the last slots through", async () => {
+    // The Public API's limiter is a sliding log that answers a refusal with the time until its oldest
+    // hit leaves the window, at least a second, and records only the hits it allows. One request per
+    // 100 ms stands for the token's budget, with the Retry-After and every wait scaled 1:10, so ten
+    // calls race for one slot as Terraform's ten workers do.
+    const windowMs = 100;
+    let hits: number[] = [];
+    const slidingLog = async () => {
+      const now = performance.now();
+      hits = hits.filter((hit) => now - hit < windowMs);
+      const [oldest] = hits;
+      if (oldest !== undefined) {
+        const seconds = Math.max(Math.ceil(((oldest + windowMs - now) * 10) / 1_000), 1);
+        return rateLimited(String(seconds));
+      }
+      hits.push(now);
+      return folderRead();
+    };
+    const waits = new Map<AbortSignal | undefined, number>();
+    const client = buildClient(
+      { token: "cf_test_token", baseUrl: "https://api.costfluent.test", fetch: slidingLog },
+      {
+        sleep: (ms, signal) => {
+          waits.set(signal, (waits.get(signal) ?? 0) + ms);
+          return new Promise((resolve) => setTimeout(resolve, ms / 10));
+        },
+        now: Date.now,
+      },
+    );
+
+    const start = performance.now();
+    const outcomes = await Promise.all(
+      Array.from({ length: 10 }, () =>
+        caught(
+          client.GET("/v1/folders/{folderId}", {
+            params: { path: { folderId: "fld_1" }, query: { workspaceId: "ws_1" } },
+          }),
+        ),
+      ),
+    );
+
+    const failed = outcomes.filter((outcome) => outcome !== undefined);
+    assert.equal(failed.length, 0, `${failed.length} of 10 calls failed: ${String(failed[0])}`);
+    assert.ok(Math.max(...waits.values()) <= 15_000, `waits ${[...waits.values()].join(", ")}`);
+    assert.ok(performance.now() - start < 5_000);
+  });
+
+  it("back off a server error after rate limits from the first step", async () => {
+    const api = new FakeApi(...Array.from({ length: 9 }, () => rateLimited("0")), unavailable(), folderRead());
+
+    await getFolder(api);
+
+    assert.equal(api.sleeps.length, 10, String(api.sleeps));
+    assert.deepEqual(api.sleeps.slice(0, 9), Array.from({ length: 9 }, () => 0));
+    const [, , , , , , , , , backoff = Number.NaN] = api.sleeps;
+    assert.ok(backoff >= 1_000 && backoff <= 1_250, `backed off ${backoff}`);
+  });
+
+  it("wait out rate limits for a minute in all", async () => {
+    const cases: [string, Response[], number, number[]][] = [
+      ["eight 7s waits, then the ninth answer", Array.from({ length: 9 }, () => rateLimited("7")), 9, Array(8).fill(7_000)],
+      ["40s, then 30s is thrown without waiting", [rateLimited("40"), rateLimited("30")], 2, [40_000]],
+      ["a zero wait counts a second", Array.from({ length: 61 }, () => rateLimited("0")), 61, Array(60).fill(0)],
+    ];
+    for (const [name, replies, requests, sleeps] of cases) {
+      const api = new FakeApi(...replies);
+
+      const error = await caught(getFolder(api));
+
+      assert.ok(error instanceof CostfluentError && error.isRateLimited, `${name}: ${String(error)}`);
+      assert.equal(api.requests.length, requests, name);
+      assert.deepEqual(api.sleeps, sleeps, name);
+    }
+  });
+
+  it("wait out a rate limit of exactly a minute", async () => {
+    const api = new FakeApi(rateLimited("60"), folderRead());
+
+    await getFolder(api);
+
+    assert.deepEqual(api.sleeps, [60_000]);
+  });
+
+  it("spend none of a server error's three retries on a rate limit", async () => {
+    const api = new FakeApi(unavailable(), rateLimited("0"), unavailable(), unavailable(), unavailable(), folderRead());
+
+    const error = await caught(getFolder(api));
+
+    assert.ok(error instanceof CostfluentError && error.status === 503, String(error));
+    assert.equal(api.requests.length, 5);
+  });
+
+  it("send a rate-limited call once with maxRetries 0", async () => {
+    const api = new FakeApi(rateLimited("1"), folderRead());
+
+    const error = await caught(
+      api
+        .client({ maxRetries: 0 })
+        .GET("/v1/folders/{folderId}", { params: { path: { folderId: "fld_1" }, query: { workspaceId: "ws_1" } } }),
+    );
+
+    assert.ok(error instanceof CostfluentError && error.isRateLimited, String(error));
+    assert.equal(api.requests.length, 1);
+    assert.deepEqual(api.sleeps, []);
+  });
+
+  it("stop waiting out a rate limit the moment the caller aborts", async () => {
+    // Through createClient, so the real sleep is the one that must listen to the caller's signal.
+    const controller = new AbortController();
+    const requests: Request[] = [];
+    const client = createClient({
+      token: "cf_test_token",
+      baseUrl: "https://api.costfluent.test",
+      fetch: async (request) => {
+        requests.push(request);
+        if (requests.length === 1) {
+          setTimeout(() => controller.abort(), 10);
+          return rateLimited("60");
+        }
+        return folderRead();
+      },
+    });
+
+    const start = performance.now();
+    const error = await caught(
+      client.GET("/v1/folders/{folderId}", {
+        params: { path: { folderId: "fld_1" }, query: { workspaceId: "ws_1" } },
+        signal: controller.signal,
+      }),
+    );
+
+    assert.ok(error instanceof DOMException && error.name === "AbortError", String(error));
+    assert.equal(requests.length, 1);
+    assert.ok(performance.now() - start < 1_000, `aborted after ${performance.now() - start} ms`);
+  });
+
+  it("arm no wait for a call already aborted when it would wait", async () => {
+    const controller = new AbortController();
+    const requests: Request[] = [];
+    const client = createClient({
+      token: "cf_test_token",
+      baseUrl: "https://api.costfluent.test",
+      fetch: async (request) => {
+        requests.push(request);
+        controller.abort(new Error("caller gave up"));
+        return rateLimited("60");
+      },
+    });
+    const realSetTimeout = globalThis.setTimeout;
+    let minuteTimers = 0;
+    globalThis.setTimeout = ((handler: () => void, ms?: number) => {
+      if (ms === 60_000) {
+        minuteTimers++;
+      }
+      return realSetTimeout(handler, ms);
+    }) as typeof setTimeout;
+
+    let error: unknown;
+    try {
+      error = await caught(
+        client.GET("/v1/folders/{folderId}", {
+          params: { path: { folderId: "fld_1" }, query: { workspaceId: "ws_1" } },
+          signal: controller.signal,
+        }),
+      );
+    } finally {
+      globalThis.setTimeout = realSetTimeout;
+    }
+
+    assert.ok(error instanceof Error && error.message === "caller gave up", String(error));
+    assert.equal(requests.length, 1);
+    assert.equal(minuteTimers, 0);
+  });
+
+  it("leave no abort listener after a wait and no timer after an abort", async () => {
+    const timers = () => process.getActiveResourcesInfo().filter((resource) => resource === "Timeout").length;
+    const waited = new AbortController();
+    await sleepUnlessAborted(1, waited.signal);
+    assert.equal(getEventListeners(waited.signal, "abort").length, 0);
+
+    const before = timers();
+    const aborted = new AbortController();
+    const wait = sleepUnlessAborted(60_000, aborted.signal);
+    assert.equal(timers(), before + 1);
+    aborted.abort(new Error("caller gave up"));
+    await assert.rejects(wait, /caller gave up/);
+    assert.equal(timers(), before);
   });
 });

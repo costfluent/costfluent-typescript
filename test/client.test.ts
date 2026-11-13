@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { type RequestListener, type Server, createServer } from "node:http";
 import { describe, it } from "node:test";
 
-import { CONTRACT_SHA256, CostfluentError, VERSION, type components, createClient } from "../src/index.ts";
+import { CONTRACT_SHA256, CostfluentError, DEFAULT_BASE_URL, VERSION, type components, createClient } from "../src/index.ts";
 import { IDEMPOTENT_CREATES } from "../src/contract.ts";
 import { FakeApi, TOKEN, json, problem } from "./fake-api.ts";
 
@@ -45,6 +45,35 @@ describe("requests", () => {
     await api.client().POST("/v1/anomalies/{anomalyId}/acknowledge", { params: { path: { anomalyId: "anm_1" } } });
 
     assert.equal(api.requests[0]?.headers.has("Idempotency-Key"), false);
+  });
+
+  it("match a create inside another resource by its path template", async () => {
+    const api = new FakeApi(json(201, { id: "wdg_1" }));
+    await api.client().POST("/v1/dashboards/{dashboardId}/widgets", {
+      params: { path: { dashboardId: "dsh_1" }, query: { workspaceId: "ws_1" } },
+      body: { title: "Spend", position: {} },
+    });
+
+    assert.equal(new URL(api.requests[0]?.url ?? "").pathname, "/v1/dashboards/dsh_1/widgets");
+    assert.match(api.requests[0]?.headers.get("Idempotency-Key") ?? "", /^[0-9a-f-]{36}$/);
+  });
+
+  it("give a POST beside or under a create no key", async () => {
+    const api = new FakeApi(json(202, {}), new Response(null, { status: 204 }));
+    const client = api.client();
+    await client.POST("/v1/custom-providers/{providerId}/uploads", {
+      params: { path: { providerId: "cpr_1" } },
+      body: { file: ["costs.csv"] },
+    });
+    await client.POST("/v1/teams/{teamId}/members", {
+      params: { path: { teamId: "team_1" } },
+      body: { userId: "usr_1", role: "member" },
+    });
+
+    assert.deepEqual(
+      api.requests.map((request) => request.headers.has("Idempotency-Key")),
+      [false, false],
+    );
   });
 
   it("send no field the caller left out, so the API applies its default", async () => {
@@ -103,8 +132,12 @@ describe("the base URL", () => {
     });
   }
 
-  it("is the API's own by default", () => {
-    createClient({ token: TOKEN });
+  it("is the API's own by default", async () => {
+    const api = new FakeApi(json(200, { organizationId: "org_1" }));
+    await createClient({ token: TOKEN, fetch: api.fetch }).GET("/v1/me");
+
+    assert.equal(DEFAULT_BASE_URL, "https://api.costfluent.com");
+    assert.equal(api.requests[0]?.url, "https://api.costfluent.com/v1/me");
   });
 
   // fetch follows a redirect itself; https to http always changes the origin, as a port does here.

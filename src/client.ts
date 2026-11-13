@@ -17,7 +17,10 @@ export interface ClientOptions {
   baseUrl?: string;
   /** Milliseconds each attempt may take, 30 seconds unless set. */
   timeoutMs?: number;
-  /** Retries after the first attempt, 3 unless set. */
+  /**
+   * Retries of a server or connection error after the first attempt, 3 unless set. A rate limit is
+   * waited out for up to 60 seconds in all instead, and 0 turns every retry off, rate limits included.
+   */
   maxRetries?: number;
   /** Replaces the global fetch, as a stub does in a test. */
   fetch?: Fetch;
@@ -48,9 +51,29 @@ const typedErrors: Middleware = {
  * for any error status, so a call that returns has its `data`.
  */
 export function createClient(options: ClientOptions): CostfluentClient {
-  return buildClient(options, {
-    sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-    now: Date.now,
+  return buildClient(options, { sleep: sleepUnlessAborted, now: Date.now });
+}
+
+/**
+ * Waits `ms`, or rejects with the signal's reason as soon as the caller aborts, at once when it
+ * already has: a rate limit can hold a call for a minute, which an abort must not sit out. Whichever
+ * comes first removes the other's timer or listener.
+ */
+export function sleepUnlessAborted(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(signal.reason);
+      return;
+    }
+    const abort = () => {
+      clearTimeout(timer);
+      reject(signal.reason);
+    };
+    const timer = setTimeout(() => {
+      signal.removeEventListener("abort", abort);
+      resolve();
+    }, ms);
+    signal.addEventListener("abort", abort, { once: true });
   });
 }
 
