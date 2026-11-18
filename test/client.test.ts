@@ -90,6 +90,41 @@ describe("requests", () => {
     assert.equal(api.requests[0]?.url, "https://gateway.example/costfluent/v1/folders");
     assert.equal(api.requests[0]?.headers.has("Idempotency-Key"), true);
   });
+
+  it("bound each attempt at 30 seconds unless timeoutMs is set", async (t) => {
+    const timers: AbortController[] = [];
+    const timeout = t.mock.method(AbortSignal, "timeout", () => {
+      const timer = new AbortController();
+      timers.push(timer);
+      return timer.signal;
+    });
+    const signals: (AbortSignal | null | undefined)[] = [];
+    const reply = async (_request: Request, init?: RequestInit) => {
+      signals.push(init?.signal);
+      return folder();
+    };
+    const getFolder = { params: { path: { folderId: "fld_1" }, query: { workspaceId: "ws_1" } } };
+    const api = new FakeApi(reply, reply);
+    await api.client().GET("/v1/folders/{folderId}", getFolder);
+    await api.client({ timeoutMs: 120_000 }).GET("/v1/folders/{folderId}", getFolder);
+
+    assert.deepEqual(
+      timeout.mock.calls.map((call) => call.arguments),
+      [[30_000], [120_000]],
+    );
+    // The timeout only bounds the attempt if the fetch gets a signal that aborts when it fires.
+    assert.deepEqual(
+      signals.map((signal) => signal?.aborted),
+      [false, false],
+    );
+    for (const timer of timers) {
+      timer.abort();
+    }
+    assert.deepEqual(
+      signals.map((signal) => signal?.aborted),
+      [true, true],
+    );
+  });
 });
 
 // The token travels with every request, so the base URL must use https, but to this machine.
