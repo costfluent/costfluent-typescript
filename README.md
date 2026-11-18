@@ -8,8 +8,8 @@ you. It runs wherever `fetch` does: Node.js 20.3 or later, Deno, Bun and edge ru
 npm install @costfluent/sdk
 ```
 
-You need an API token, created under **Settings**, **API tokens**, on a plan that includes API
-access. Give the token only the capabilities your script needs, and keep it on a server: a token
+You need an API token, created under **Settings**, **API tokens**, in any Costfluent organization.
+Give the token only the capabilities your script needs, and keep it on a server: a token
 in a browser bundle is a token anyone can read.
 
 ## Quick start

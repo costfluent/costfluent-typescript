@@ -2275,7 +2275,7 @@ export interface paths {
         put?: never;
         /**
          * Create app
-         * @description Creates a notification channel that budgets, cost alerts and report notifications can deliver to. A webhook created without a secret in its config is given one, which this answer returns once as signingSecret. A channel kind the organization's plan does not include is refused with 422 plan_upgrade_required.
+         * @description Creates a notification channel that budgets, cost alerts, anomalies, expiring commitments, credit notices and stale connections deliver to as they are routed. Scheduled reports reach email, Slack and Teams channels only, never a webhook; a webhook also receives the state changes its config's events subscribe to. A webhook created without a secret in its config is given one, which this answer returns once as signingSecret; a secret the client chooses must be at least 32 characters, and a shorter one is refused with 400. A channel kind the organization's plan does not include is refused with 422 plan_upgrade_required.
          *
          *     Needs an organization token with `createApp`.
          */
@@ -2302,7 +2302,7 @@ export interface paths {
         get: operations["GetApp"];
         /**
          * Update app
-         * @description Renames a notification channel or replaces its configuration. A webhook's secret left out of the new configuration, or sent back as ***, keeps the stored one; null removes it. A webhook's url sent back in its redacted form, its scheme and host followed by /***, keeps the stored one. The kind cannot change.
+         * @description Renames a notification channel or replaces its configuration. A webhook's secret left out of the new configuration, or sent back as ***, keeps the stored one; null or an empty string removes it. A new secret must be at least 32 characters, and a shorter one is refused with 400; a secret equal to the stored one is kept, whatever its length. A webhook's url sent back in its redacted form, its scheme and host followed by /***, keeps the stored one. The kind cannot change.
          *
          *     Needs an organization token with `updateApp`.
          */
@@ -2551,7 +2551,9 @@ export interface paths {
         };
         /**
          * Read allocation coverage
-         * @description Needs a token with `viewCostAllocation` on the workspace.
+         * @description Answers the cost the saved rules allocate in the window, per currency and segment.
+         *
+         *     Needs a token with `viewCostAllocation` on the workspace.
          */
         get: operations["GetAllocationCoverage"];
         put?: never;
@@ -2627,9 +2629,9 @@ export interface paths {
         put?: never;
         /**
          * Preview an allocation rule
-         * @description Computes what the rule would move without creating it. Allocation is evaluated at query time, so enabling a rule restates history immediately.
+         * @description Computes what the rule would move without creating it. Allocation is evaluated at query time, so enabling a rule restates history immediately. It reads the workspace's committed cost, so it needs `viewCosts` as a cost read does.
          *
-         *     Needs a token with `viewCostAllocation` on the workspace.
+         *     Needs a token with `viewCosts` and `viewCostAllocation` on the workspace.
          */
         post: operations["PreviewAllocationRule"];
         delete?: never;

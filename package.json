@@ -31,7 +31,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "test": "node --test 'test/*.test.ts'"
+    "test": "node --test --experimental-test-coverage --test-coverage-include='src/**' --test-coverage-exclude='src/schema.ts' --test-coverage-exclude='src/contract.ts' --test-coverage-lines=99 --test-coverage-branches=96 'test/*.test.ts'"
   },
   "dependencies": {
     "openapi-fetch": "^0.17.0"

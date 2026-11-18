@@ -66,6 +66,35 @@ describe("retries", () => {
     assert.deepEqual(api.sleeps, []);
   });
 
+  it("wait the Retry-After a server error asks for", async () => {
+    const api = new FakeApi(problem(503, "service_unavailable", {}, { "Retry-After": "5" }), folderRead());
+
+    await getFolder(api);
+
+    assert.equal(api.requests.length, 2);
+    assert.deepEqual(api.sleeps, [5_000]);
+  });
+
+  it("throw at once when a server error asks for over a minute", async () => {
+    const api = new FakeApi(problem(503, "service_unavailable", {}, { "Retry-After": "3600" }), folderRead());
+
+    const error = await caught(getFolder(api));
+
+    assert.ok(error instanceof CostfluentError);
+    assert.equal(error.status, 503);
+    assert.equal(api.requests.length, 1);
+    assert.deepEqual(api.sleeps, []);
+  });
+
+  it("wait a server error's Retry-After of exactly a minute", async () => {
+    const api = new FakeApi(problem(503, "service_unavailable", {}, { "Retry-After": "60" }), folderRead());
+
+    await getFolder(api);
+
+    assert.equal(api.requests.length, 2);
+    assert.deepEqual(api.sleeps, [60_000]);
+  });
+
   it("resend a read after a server error with growing backoff", async () => {
     const api = new FakeApi(unavailable(), unavailable(), unavailable(), folderRead());
 
