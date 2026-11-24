@@ -1427,7 +1427,7 @@ export interface paths {
         };
         /**
          * List uploads
-         * @description Returns a custom provider's uploads, newest first, each with the days it covers and what it billed. billedTotals is null unless the token has manageProviders, or viewCosts in workspaces that together read the whole connection.
+         * @description Returns a custom provider's uploads, newest first, each with the days it covers and what it billed. billedTotals and invoice are null unless the token has manageProviders, or viewCosts in workspaces that together read the whole connection.
          *
          *     Needs an organization token with `viewProviders`.
          */
@@ -1435,7 +1435,7 @@ export interface paths {
         put?: never;
         /**
          * Upload cost files
-         * @description Uploads one run of a FOCUS cost export to a custom provider: every file of the run in a repeated multipart field `file`, each .csv or .csv.gz with the same header, up to 90 MB together. The upload is accepted as pending and processed in the background; if any row is invalid nothing is committed and the upload fails with its errors. A completed upload replaces the provider's cost for every day from its first charge to its last. Its rows count toward the organization's monthly volume, one row for each day a cost is spread over, and the upload is checked whole before any day is committed: one that would pass a monthly volume limit set for the organization, or is processed while ingestion is paused, fails and commits nothing. An organization has at most 5 uploads waiting or being processed at once, one deleted before it finished counting for 5 minutes after the delete; a further upload, or one sent once its custom connections have committed the day's cost records or bytes, is refused with 429 and nothing is stored.
+         * @description Uploads one run of a FOCUS cost export to a custom provider: every file of the run in a repeated multipart field `file`, each .csv or .csv.gz with the same header, up to 90 MB together. The upload is accepted as pending and processed in the background; if any row is invalid nothing is committed and the upload fails with its errors. A completed upload replaces the provider's cost for every day from its first charge to its last. Its rows count toward the organization's monthly volume, one row for each day a cost is spread over, and the upload is checked whole before any day is committed: one that would pass a monthly volume limit set for the organization, or is processed while ingestion is paused, fails and commits nothing. An organization has at most 5 uploads waiting or being processed at once, one deleted before it finished counting for 5 minutes after the delete; a further upload, or one sent once its custom connections have committed the day's cost records or bytes, is refused with 429 and nothing is stored. A provider created with the setting upload_format einvoice takes one e-invoice per upload instead: an XRechnung, ZUGFeRD or Factur-X invoice of profile EN 16931 or above, as an .xml file or a PDF that embeds it, up to 20 MiB. It is read when it is received, and refused with its reason if it cannot be. Its lines become the cost; its VAT is shown in the upload's invoice and never counted. A provider collects one seller's invoices: the seller of its first. The identical invoice sent again answers 200 with its first upload, another document under the same number 409, and a corrected invoice (384) replaces the invoice it names, which must be an upload of the provider.
          *
          *     Needs an organization token with `manageProviders`.
          */
@@ -1455,7 +1455,7 @@ export interface paths {
         };
         /**
          * Get upload
-         * @description Returns one upload with its status and, when it failed, the first errors of its report. billedTotals is null unless the token has manageProviders, or viewCosts in workspaces that together read the whole connection.
+         * @description Returns one upload with its status and, when it failed, the first errors of its report. billedTotals and invoice are null unless the token has manageProviders, or viewCosts in workspaces that together read the whole connection.
          *
          *     Needs an organization token with `viewProviders`.
          */
@@ -3149,6 +3149,7 @@ export interface components {
             } | null;
             /** Format: int32 */
             syncFrequencyMinutes?: number;
+            enableAutomaticSyncing?: boolean;
         };
         DeleteProviderRequest: Record<string, never>;
         PaginatedResponseOfProviderDefinitionResponse: {
@@ -3274,6 +3275,7 @@ export interface components {
             nextSyncAt?: string | null;
             /** Format: int32 */
             syncFrequencyMinutes: number;
+            enableAutomaticSyncing: boolean;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -3341,6 +3343,7 @@ export interface components {
             clearSettings?: boolean;
             /** Format: int32 */
             syncFrequencyMinutes?: number | null;
+            enableAutomaticSyncing?: boolean | null;
         };
         KubernetesEfficiencyResponse: {
             currency?: string | null;
@@ -3704,6 +3707,8 @@ export interface components {
             billedTotals?: {
                 [key: string]: string;
             } | null;
+            format: string;
+            invoice?: components["schemas"]["CustomCostUploadInvoice"] | null;
             /** Format: date-time */
             uploadedAt: string;
             /** Format: date-time */
@@ -3712,6 +3717,44 @@ export interface components {
         };
         CustomCostUploadPublicId: string;
         UploadStatus: string;
+        CustomCostUploadInvoice: {
+            number: string;
+            typeCode: string;
+            kind: components["schemas"]["EInvoiceKind"];
+            /** Format: date */
+            issueDate: string;
+            sellerName: string;
+            precedingInvoiceNumber?: string | null;
+            currency: string;
+            netTotal: string;
+            vatTotal: string;
+            grossTotal: string;
+            vatCurrency?: string | null;
+            vatTotalInVatCurrency?: string | null;
+            vatBreakdown: components["schemas"]["CustomCostUploadVatBreakdown"][];
+            reverseCharge: boolean;
+            /** Format: int32 */
+            lineCount: number;
+            placements: components["schemas"]["CustomCostUploadLinePlacements"];
+        };
+        EInvoiceKind: string;
+        CustomCostUploadVatBreakdown: {
+            categoryCode: string;
+            rate?: string | null;
+            taxableAmount: string;
+            taxAmount: string;
+            exemptionReasonCode?: string | null;
+        };
+        CustomCostUploadLinePlacements: {
+            /** Format: int32 */
+            linePeriod: number;
+            /** Format: int32 */
+            invoicePeriod: number;
+            /** Format: int32 */
+            deliveryDate: number;
+            /** Format: int32 */
+            issueDate: number;
+        };
         CustomCostUploadError: {
             /** Format: int32 */
             rowNumber: number;
@@ -10308,7 +10351,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description Another request changed the provider while this one ran, or the external ID or identity it sets is already connected in this organization; nothing was changed */
+            /** @description Another request changed the provider while this one ran, or the external ID or identity it sets is already connected in this organization, or it changes a custom provider's upload_format while the provider has uploads; nothing was changed */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -13439,7 +13482,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Accepted */
+            /** @description An e-invoice provider already has this invoice, identical: the answer is its first upload, and nothing was stored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomCostUploadResponse"];
+                };
+            };
+            /** @description The upload was accepted as pending and is processed in the background */
             202: {
                 headers: {
                     [name: string]: unknown;
@@ -13448,7 +13500,7 @@ export interface operations {
                     "application/json": components["schemas"]["CustomCostUploadResponse"];
                 };
             };
-            /** @description The form is malformed or carries no file or too many; a file is empty, not .csv or .csv.gz, not valid gzip, or has a missing, overlong or different header row; the files exceed 90 MB together; or the provider is not a custom provider */
+            /** @description The form is malformed or carries no file or too many; a file is empty, not .csv or .csv.gz, not valid gzip, or has a missing, overlong or different header row; the files exceed 90 MB together; or the provider is not a custom provider. For an e-invoice provider: more than one file, a file that is not .xml or .pdf or over 20 MiB, or an invoice that cannot be read, each with its reason: a PDF without an embedded invoice, a profile below EN 16931 (MINIMUM, BASIC WL, ZUGFeRD 1.0), a DOCTYPE, a type other than 380, 326, 384 or 381, more than 10,000 lines, an identifier over 200 characters, a currency that is not ISO 4217, an amount the cost store cannot hold, a billed day before 2000 or from 2100, a line period longer than three years, or sums that do not add up */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -13493,6 +13545,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ApiError"];
                 };
             };
+            /** @description An e-invoice provider already has another document under this invoice number; the message names its upload, and nothing was stored */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiError"];
+                };
+            };
             /** @description The request body is larger than this operation accepts */
             413: {
                 headers: {
@@ -13502,7 +13563,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description Nothing was stored: ingestion is paused for the organization (invalid_state), or the provider is paused because the organization has more connections than the limit set for it (limit_exceeded) */
+            /** @description Nothing was stored: ingestion is paused for the organization (invalid_state), or the provider is paused because the organization has more connections than the limit set for it (limit_exceeded); or, for an e-invoice provider, the invoice is from another seller than the one the provider collects, or it is a corrected invoice (384) that names no original, names more than one, or names one the provider has not received (business_rule_violation), each named in the message */
             422: {
                 headers: {
                     [name: string]: unknown;

@@ -54,8 +54,14 @@ function retryAfterMs(headers: Headers, now: number): number | undefined {
   if (!value) {
     return undefined;
   }
-  if (/^-?\d+$/.test(value)) {
+  if (/^[+-]?\d+$/.test(value)) {
     return Math.max(Number(value) * 1_000, 0);
+  }
+  // Only a value with an HTTP date's clock time reaches Date.parse. V8 reads loose strings such as
+  // "1.5", "1,5", "1/5" or "Jan 1" as past dates, which would resend at once, where the Go and
+  // Python clients refuse them and back off. Every RFC 9110 date form carries hh:mm:ss.
+  if (!/\b\d{2}:\d{2}:\d{2}\b/.test(value)) {
+    return undefined;
   }
   const at = Date.parse(value);
   return Number.isNaN(at) ? undefined : Math.max(at - now, 0);
