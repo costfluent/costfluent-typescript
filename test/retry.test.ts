@@ -301,6 +301,19 @@ describe("retries", () => {
       ["-5", 0, 0],
       ["Mon, 19 Oct 2026 11:59:00 GMT", 0, 0],
       ["soon", 1_000, 1_250],
+      // A signed whole number is seconds. Anything else that is not an HTTP date backs off, though
+      // Date.parse reads each of these as a date in 2000, 2001 or early 2026, all in the past.
+      ["+5", 5_000, 5_000],
+      ["1.5", 1_000, 1_250],
+      ["0.5", 1_000, 1_250],
+      ["2.", 1_000, 1_250],
+      ["1,5", 1_000, 1_250],
+      ["1 5", 1_000, 1_250],
+      ["1/5", 1_000, 1_250],
+      ["1.5.2026", 1_000, 1_250],
+      ["Jan 1", 1_000, 1_250],
+      // A clock time lets a value reach Date.parse, which still refuses a month it does not know.
+      ["Mon, 19 Foo 2026 12:00:30 GMT", 1_000, 1_250],
     ];
     for (const [value, low, high] of cases) {
       const api = new FakeApi(problem(429, "rate_limited", {}, { "Retry-After": value }), folderRead());
