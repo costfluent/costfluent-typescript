@@ -1,7 +1,7 @@
 // Generated from the Public API document. Do not edit.
 
 /** SHA-256 of the Public API document this package was generated from. */
-export const CONTRACT_SHA256 = "377d8fe1df930126f922e9576784d06be53d40ffc686111fc7b431718f1e6c06";
+export const CONTRACT_SHA256 = "30defe4d1bc3684dca0c0db1f8dfbfc534be9090819882104a4013de68c82a33";
 
 /** The creates that take an Idempotency-Key; createClient sends a fresh one with each. */
 export const IDEMPOTENT_CREATES: ReadonlySet<string> = new Set([
